@@ -6,7 +6,7 @@
   
 [![Architecture](https://img.shields.io/badge/Arch-x64%20|%20ARM64-orange.svg)]()
 
-Worlds most clean UI/UX multimedia player ever made..... ever
+Worlds most clean looking UI/UX multimedia player ever made..... ever
 
 ---
 
