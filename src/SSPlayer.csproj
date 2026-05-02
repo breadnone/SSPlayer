@@ -1,0 +1,247 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
+		<TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion>
+		<RootNamespace>SSPlayer</RootNamespace>
+		<Platforms>x64;ARM64</Platforms>
+		<RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+		<RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$(Platform)</RuntimeIdentifier>
+		<PublishProfile>win-$(Platform).pubxml</PublishProfile>
+		<UseWinUI>true</UseWinUI>
+		<EnableMsixTooling>true</EnableMsixTooling>
+		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+		<PublishReadyToRun>true</PublishReadyToRun>
+		<PublishTrimmed>true</PublishTrimmed>
+		<PublishSingleFile>false</PublishSingleFile>
+		<HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">false</PublishReadyToRun>
+		<PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">true</PublishReadyToRun>
+		<PublishTrimmed Condition="'$(Configuration)' == 'Debug'">false</PublishTrimmed>
+		<PublishTrimmed Condition="'$(Configuration)' != 'Debug'">true</PublishTrimmed>
+		<EnableComInterop>true</EnableComInterop>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+	</PropertyGroup>
+	<PropertyGroup>
+		<DisableWinExeMain>true</DisableWinExeMain>
+		<DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+		<StartupObject>SSPlayer.Program</StartupObject>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+		<DebugType>full</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+	<PropertyGroup>
+		<NoWarn>$(NoWarn);CA2257</NoWarn>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<TrimmerRootDescriptor Include="TrimmerRoots.xml" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<Content Remove="Assets\Square44x44Logo.png" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<Content Update="Assets\ssplayer-logo-blocked.ico">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+	<Target Name="PrintContent" BeforeTargets="Build">
+		<Message Text="Content: %(Content.Identity)" Importance="high" />
+	</Target>
+	<ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+		<ProjectCapability Include="Msix" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Remove="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
+		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.1721" />
+		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260416003" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Remove="Assets\**" />
+		<None Remove="Assets\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="Assets\ass\BadgeLogo.scale-100.png" />
+		<Content Include="Assets\ass\BadgeLogo.scale-125.png" />
+		<Content Include="Assets\ass\BadgeLogo.scale-150.png" />
+		<Content Include="Assets\ass\BadgeLogo.scale-200.png" />
+		<Content Include="Assets\ass\BadgeLogo.scale-400.png" />
+		<Content Include="Assets\ass\SplashScreen.scale-100.png" />
+		<Content Include="Assets\ass\SplashScreen.scale-125.png" />
+		<Content Include="Assets\ass\SplashScreen.scale-150.png" />
+		<Content Include="Assets\ass\SplashScreen.scale-200.png" />
+		<Content Include="Assets\ass\SplashScreen.scale-400.png" />
+		<Content Include="Assets\ass\Square150x150Logo.scale-100.png" />
+		<Content Include="Assets\ass\Square150x150Logo.scale-125.png" />
+		<Content Include="Assets\ass\Square150x150Logo.scale-150.png" />
+		<Content Include="Assets\ass\Square150x150Logo.scale-200.png" />
+		<Content Include="Assets\ass\Square150x150Logo.scale-400.png" />
+		<Content Include="Assets\ass\Square310x310Logo.scale-100.png" />
+		<Content Include="Assets\ass\Square310x310Logo.scale-125.png" />
+		<Content Include="Assets\ass\Square310x310Logo.scale-150.png" />
+		<Content Include="Assets\ass\Square310x310Logo.scale-200.png" />
+		<Content Include="Assets\ass\Square310x310Logo.scale-400.png" />
+		<Content Include="Assets\ass\Square44x44Logo.altform-lightunplated_targetsize-16.png" />
+		<Content Include="Assets\ass\Square44x44Logo.altform-lightunplated_targetsize-24.png" />
+		<Content Include="Assets\ass\Square44x44Logo.altform-lightunplated_targetsize-256.png" />
+		<Content Include="Assets\ass\Square44x44Logo.altform-lightunplated_targetsize-32.png" />
+		<Content Include="Assets\ass\Square44x44Logo.altform-lightunplated_targetsize-48.png" />
+		<Content Include="Assets\ass\Square44x44Logo.altform-unplated_targetsize-16.png" />
+		<Content Include="Assets\ass\Square44x44Logo.altform-unplated_targetsize-24.png" />
+		<Content Include="Assets\ass\Square44x44Logo.altform-unplated_targetsize-256.png" />
+		<Content Include="Assets\ass\Square44x44Logo.altform-unplated_targetsize-32.png" />
+		<Content Include="Assets\ass\Square44x44Logo.altform-unplated_targetsize-48.png" />
+		<Content Include="Assets\ass\Square44x44Logo.scale-100.png" />
+		<Content Include="Assets\ass\Square44x44Logo.scale-125.png" />
+		<Content Include="Assets\ass\Square44x44Logo.scale-150.png" />
+		<Content Include="Assets\ass\Square44x44Logo.scale-200.png" />
+		<Content Include="Assets\ass\Square44x44Logo.scale-400.png" />
+		<Content Include="Assets\ass\Square44x44Logo.targetsize-16.png" />
+		<Content Include="Assets\ass\Square44x44Logo.targetsize-24.png" />
+		<Content Include="Assets\ass\Square44x44Logo.targetsize-256.png" />
+		<Content Include="Assets\ass\Square44x44Logo.targetsize-32.png" />
+		<Content Include="Assets\ass\Square44x44Logo.targetsize-48.png" />
+		<Content Include="Assets\ass\Square71x71Logo.scale-100.png" />
+		<Content Include="Assets\ass\Square71x71Logo.scale-125.png" />
+		<Content Include="Assets\ass\Square71x71Logo.scale-150.png" />
+		<Content Include="Assets\ass\Square71x71Logo.scale-200.png" />
+		<Content Include="Assets\ass\Square71x71Logo.scale-400.png" />
+		<Content Include="Assets\ass\ssplayer-logo.scale-100.png" />
+		<Content Include="Assets\ass\ssplayer-logo.scale-125.png" />
+		<Content Include="Assets\ass\ssplayer-logo.scale-150.png" />
+		<Content Include="Assets\ass\ssplayer-logo.scale-200.png" />
+		<Content Include="Assets\ass\ssplayer-logo.scale-400.png" />
+		<Content Include="Assets\ass\Wide310x150Logo.scale-100.png" />
+		<Content Include="Assets\ass\Wide310x150Logo.scale-125.png" />
+		<Content Include="Assets\ass\Wide310x150Logo.scale-150.png" />
+		<Content Include="Assets\ass\Wide310x150Logo.scale-200.png" />
+		<Content Include="Assets\ass\Wide310x150Logo.scale-400.png" />
+		<Content Include="Assets\BadgeLogo.scale-100.png" />
+		<Content Include="Assets\BadgeLogo.scale-125.png" />
+		<Content Include="Assets\BadgeLogo.scale-150.png" />
+		<Content Include="Assets\BadgeLogo.scale-400.png" />
+		<Content Include="Assets\LargeTitle.scale-100.png" />
+		<Content Include="Assets\LargeTitle.scale-125.png" />
+		<Content Include="Assets\LargeTitle.scale-150.png" />
+		<Content Include="Assets\LargeTitle.scale-200.png" />
+		<Content Include="Assets\LargeTitle.scale-400.png" />
+		<Content Include="Assets\MediumTile.scale-100.png" />
+		<Content Include="Assets\MediumTile.scale-125.png" />
+		<Content Include="Assets\MediumTile.scale-150.png" />
+		<Content Include="Assets\MediumTile.scale-200.png" />
+		<Content Include="Assets\MediumTile.scale-400.png" />
+		<Content Include="Assets\PackageLogo.scale-100.png" />
+		<Content Include="Assets\PackageLogo.scale-125.png" />
+		<Content Include="Assets\PackageLogo.scale-150.png" />
+		<Content Include="Assets\PackageLogo.scale-200.png" />
+		<Content Include="Assets\PackageLogo.scale-400.png" />
+		<Content Include="Assets\SmallTile.scale-100.png" />
+		<Content Include="Assets\SmallTile.scale-125.png" />
+		<Content Include="Assets\SmallTile.scale-150.png" />
+		<Content Include="Assets\SmallTile.scale-200.png" />
+		<Content Include="Assets\SmallTile.scale-400.png" />
+		<Content Include="Assets\SplashScreen.scale-100.png" />
+		<Content Include="Assets\SplashScreen.scale-125.png" />
+		<Content Include="Assets\SplashScreen.scale-150.png" />
+		<Content Include="Assets\SplashScreen.scale-400.png" />
+		<Content Include="Assets\Square150x150Logo.scale-100.png" />
+		<Content Include="Assets\Square150x150Logo.scale-125.png" />
+		<Content Include="Assets\Square150x150Logo.scale-150.png" />
+		<Content Include="Assets\Square150x150Logo.scale-400.png" />
+		<Content Include="Assets\Square310x310Logo.scale-100.png" />
+		<Content Include="Assets\Square310x310Logo.scale-125.png" />
+		<Content Include="Assets\Square310x310Logo.scale-150.png" />
+		<Content Include="Assets\Square310x310Logo.scale-400.png" />
+		<Content Include="Assets\Square44x44Logo.altform-lightunplated_targetsize-16.png" />
+		<Content Include="Assets\Square44x44Logo.altform-lightunplated_targetsize-24.png" />
+		<Content Include="Assets\Square44x44Logo.altform-lightunplated_targetsize-256.png" />
+		<Content Include="Assets\Square44x44Logo.altform-lightunplated_targetsize-32.png" />
+		<Content Include="Assets\Square44x44Logo.altform-lightunplated_targetsize-48.png" />
+		<Content Include="Assets\Square44x44Logo.altform-unplated_targetsize-16.png" />
+		<Content Include="Assets\Square44x44Logo.altform-unplated_targetsize-24.png" />
+		<Content Include="Assets\Square44x44Logo.altform-unplated_targetsize-256.png" />
+		<Content Include="Assets\Square44x44Logo.altform-unplated_targetsize-32.png" />
+		<Content Include="Assets\Square44x44Logo.altform-unplated_targetsize-48.png" />
+		<Content Include="Assets\Square44x44Logo.scale-100.png" />
+		<Content Include="Assets\Square44x44Logo.scale-125.png" />
+		<Content Include="Assets\Square44x44Logo.scale-150.png" />
+		<Content Include="Assets\Square44x44Logo.scale-200.png" />
+		<Content Include="Assets\Square150x150Logo.scale-200.png" />
+		<Content Include="Assets\Square44x44Logo.scale-400.png" />
+		<Content Include="Assets\Square44x44Logo.targetsize-16.png" />
+		<Content Include="Assets\Square44x44Logo.targetsize-24.png" />
+		<Content Include="Assets\Square44x44Logo.targetsize-256.png" />
+		<Content Include="Assets\Square44x44Logo.targetsize-32.png" />
+		<Content Include="Assets\Square44x44Logo.targetsize-48.png" />
+		<Content Include="Assets\Square71x71Logo.scale-100.png" />
+		<Content Include="Assets\Square71x71Logo.scale-125.png" />
+		<Content Include="Assets\Square71x71Logo.scale-150.png" />
+		<Content Include="Assets\Square71x71Logo.scale-400.png" />
+		<Content Include="Assets\ssplayer-logo.scale-100.png" />
+		<Content Include="Assets\ssplayer-logo.scale-125.png" />
+		<Content Include="Assets\ssplayer-logo.scale-150.png" />
+		<Content Include="Assets\ssplayer-logo.scale-200.png" />
+		<Content Include="Assets\ssplayer-logo.scale-400.png" />
+		<Content Include="Assets\Wide310x150Logo.scale-100.png" />
+		<Content Include="Assets\Wide310x150Logo.scale-125.png" />
+		<Content Include="Assets\Wide310x150Logo.scale-150.png" />
+		<Content Include="Assets\Wide310x150Logo.scale-200.png" />
+		<Content Include="Assets\Square310x310Logo.scale-200.png" />
+		<Content Include="Assets\Square71x71Logo.scale-200.png" />
+		<Content Include="Assets\SplashScreen.scale-200.png" />
+		<Content Include="Assets\LockScreenLogo.scale-200.png" />
+		<Content Include="Assets\BadgeLogo.scale-200.png" />
+		<Content Include="Assets\StoreLogo.png" />
+
+			<Content Include="Assets\ssplayer-logo-blocked.ico">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Assets\Wide310x150Logo.scale-400.png" />
+		<Content Include="Assets\WideTitle.scale-100.png" />
+		<Content Include="Assets\WideTitle.scale-125.png" />
+		<Content Include="Assets\WideTitle.scale-150.png" />
+		<Content Include="Assets\WideTitle.scale-200.png" />
+		<Content Include="Assets\WideTitle.scale-400.png" />
+	</ItemGroup>
+	<PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+		<HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+	</PropertyGroup>
+	
+	<PropertyGroup>
+		<AssemblyName>SSPlayer</AssemblyName>
+		<Title>SSPlayer Media Player</Title>
+		<Authors>Breadnone</Authors>
+		<Company>Breadnone</Company>
+		<Copyright>Copyright © 2026 Breadnone</Copyright>
+		<Description>Fluent Multimedia Player for Windows 11</Description>
+		<Version>1.0.0.1</Version>
+		<FileVersion>1.0.0.1</FileVersion>
+		<AssemblyVersion>1.0.0.1</AssemblyVersion>
+		<ApplicationIcon>Assets\ssplayer-logo-blocked.ico</ApplicationIcon>
+		<GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
+		<PackageCertificateThumbprint>86F4A6C6D24AB470BADE1652083121671C76344F</PackageCertificateThumbprint>
+		<AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+		<GenerateAppInstallerFile>False</GenerateAppInstallerFile>
+		<AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
+		<AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+		<AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
+		<GenerateTestArtifacts>True</GenerateTestArtifacts>
+		<AppxBundle>Never</AppxBundle>
+		<HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
+	</PropertyGroup>
+	<PropertyGroup>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+	</PropertyGroup>
+</Project>

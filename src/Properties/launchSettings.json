@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "SPPlayer (Package)": {
+      "commandName": "MsixPackage",
+      "nativeDebugging": true
+    },
+    "SPPlayer (Unpackaged)": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
