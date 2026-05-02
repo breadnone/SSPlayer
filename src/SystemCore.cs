@@ -187,6 +187,7 @@ public sealed partial class MainWindow
 
                 SnapToAspectRatio();
                 await FadeInWindow(200);
+
                 if (MainTokenSource.Token.IsCancellationRequested) return;
 
                 DispatcherQueue.TryEnqueue(() =>
@@ -355,7 +356,6 @@ public sealed partial class MainWindow
             XamlRoot = this.Content.XamlRoot
         };
 
-        // 3. Handle Result
         var result = await dialog.ShowAsync();
 
         if (result == ContentDialogResult.Primary)
@@ -469,7 +469,7 @@ public sealed partial class MainWindow
         var session = _player.MediaPlayer.PlaybackSession;
         if (session == null || session.NaturalDuration == TimeSpan.Zero) return;
 
-        double fps = 30.0; // Default fallback
+        double fps = 30.0;
 
         try
         {
@@ -637,7 +637,7 @@ public sealed partial class MainWindow
                                 if (compressionLevel > 0)
                                 {
                                     var compression = 3 + compressionLevel;
-                                    // Aggressive posterization to 3 bits per channel
+
                                     for (int j = 0; j < pixels.Length; j += 4)
                                     {
                                         pixels[j] = (byte)((pixels[j] >> compression) << compression);
@@ -878,11 +878,9 @@ public sealed partial class MainWindow
                 return;
             }
 
-            // Use the same consistent colors as your other overlays
             var semiTransBrush = new SolidColorBrush(Color.FromArgb(160, 15, 15, 15));
             var textBrush = new SolidColorBrush(Colors.WhiteSmoke);
 
-            // --- DROPDOWN SETUP ---
             var fpsOptions = new string[] { "10 FPS", "15 FPS", "24 FPS", "30 FPS" };
             int[] fpsValues = { 10, 15, 24, 30 };
 
@@ -935,7 +933,6 @@ public sealed partial class MainWindow
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = this.Content.XamlRoot,
-                // Consistency styling
                 RequestedTheme = ElementTheme.Dark,
                 Background = semiTransBrush,
             };
@@ -958,6 +955,7 @@ public sealed partial class MainWindow
             if (outputFile == null || MainTokenSource.IsCancelled()) return;
 
             ToggleNonBlockingLoading(true);
+
             // Offload heavy processing to background thread
             await Task.Run(async () =>
             {
@@ -992,6 +990,7 @@ public sealed partial class MainWindow
         if (_player.MediaPlayer?.PlaybackSession == null || timelineController == null) return;
 
         var session = _player.MediaPlayer.PlaybackSession;
+
         if (session.NaturalDuration.TotalSeconds <= 0) return;
 
         TimeSpan targetPos = TimeSpan.FromSeconds(Math.Clamp(p, 0, 1) * session.NaturalDuration.TotalSeconds);
@@ -1091,7 +1090,7 @@ public sealed partial class MainWindow
         if (_topNowPlayingBar.Child is not Canvas canvas) return;
         canvas.Children.Clear();
 
-        string cleanTitle = System.IO.Path.GetFileNameWithoutExtension(title);
+        string cleanTitle = Path.GetFileNameWithoutExtension(title);
         var probe = new TextBlock { UseLayoutRounding = true, FontSize = 14, FontStyle = Windows.UI.Text.FontStyle.Italic };
         probe.Inlines.Add(new Run { Text = $"  {cleanTitle}  " });
         probe.Inlines.Add(new Run { Text = "\uE768", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontStyle = Windows.UI.Text.FontStyle.Normal, FontSize = 12 });
@@ -1120,7 +1119,6 @@ public sealed partial class MainWindow
             canvas.Children.Add(tb);
         }
 
-        // Direct Canvas Animation
         var transform = new TranslateTransform();
         canvas.RenderTransform = transform;
 
@@ -1141,10 +1139,8 @@ public sealed partial class MainWindow
     }
     private void EnableBorderlessInteractions(UIElement rootElement)
     {
-        // Always clean up previous handlers first
         DisableBorderlessInteractions(rootElement);
 
-        // Only register drag handlers when actually in borderless mode
         if (m_AppWindow?.Presenter is not OverlappedPresenter op || op.HasTitleBar)
             return;
 
@@ -1153,13 +1149,13 @@ public sealed partial class MainWindow
             if (e.Handled) return;
 
             var point = e.GetCurrentPoint(rootElement);
+
             if (point.Properties.IsLeftButtonPressed)
             {
                 Point clientPos = point.Position;
                 PointInt32 windowPos = m_AppWindow.Position;
                 double screenXDIP = windowPos.X + clientPos.X;
                 double screenYDIP = windowPos.Y + clientPos.Y;
-
                 int screenX = (int)Math.Round(screenXDIP);
                 int screenY = (int)Math.Round(screenYDIP);
 
@@ -1194,7 +1190,6 @@ public sealed partial class MainWindow
 
                 double deltaX = currentScreenMousePos.X - _dragStartMouseScreenPos.X;
                 double deltaY = currentScreenMousePos.Y - _dragStartMouseScreenPos.Y;
-
                 int newX = (int)(_dragStartWindowPos.X + deltaX);
                 int newY = (int)(_dragStartWindowPos.Y + deltaY);
 
@@ -1327,6 +1322,7 @@ public sealed partial class MainWindow
                 this.IsSafeOrThrow(ex0);
                 return;
             }
+
             var ms = MediaSource.CreateFromStorageFile(f);
             var duration = clip.OriginalDuration;
             fileType = IsVideo(f) ? FileType.Video : FileType.Unknown;
@@ -1362,6 +1358,7 @@ public sealed partial class MainWindow
                         }
                     }
                 }
+
                 //DONT RETURN HERE if error out!!!
                 catch (FileNotFoundException) { /* no SRT, that's fine */ }
                 catch (Exception ex1) { this.IsSafeOrThrow(ex1); return; }
@@ -1398,6 +1395,7 @@ public sealed partial class MainWindow
                 }
 
                 var audioTask = audioEngine.SetupAudioEngine(f, _player, _volumeSlider.Value, _currentSettings.Equalizer);
+
                 PauseMedia(PlayerPlayState.Paused);
 
                 var audioIsReady = await audioTask;
@@ -1488,7 +1486,6 @@ public sealed partial class MainWindow
     {
         try
         {
-            // ── Radio: just pause/stop the radio player ──
             if (fileType == FileType.Radio)
             {
                 if (RadioPlayer != null)
@@ -1496,13 +1493,14 @@ public sealed partial class MainWindow
                     if (state == PlayerPlayState.Stop)
                     {
                         RadioPlayer.Pause();
-                        RadioPlayer.Source = null;  // stop buffering entirely
+                        RadioPlayer.Source = null;
                     }
                     else
                     {
-                        RadioPlayer.Pause();        // pause keeps the connection
+                        RadioPlayer.Pause();
                     }
                 }
+
                 PlayState = state;
                 return;
             }
@@ -1591,7 +1589,6 @@ public sealed partial class MainWindow
                 }
             }
 
-            // Always load the first file — AutoPlay decision is inside LoadVideoFile
             if (firstFile != null)
                 await PlayItemByPath(firstFile.Path, InternalPlayStatus.None);
         }
@@ -1667,6 +1664,7 @@ public sealed partial class MainWindow
                     }
 
                     var session = _player?.MediaPlayer?.PlaybackSession;
+
                     if (session == null)
                     {
                         _dynamicInfoText.Text = "No session";
@@ -1674,6 +1672,7 @@ public sealed partial class MainWindow
                     }
 
                     double fps = 30.0;
+
                     try
                     {
                         if (_player?.Source is MediaPlaybackItem item)
@@ -1736,9 +1735,12 @@ public sealed partial class MainWindow
                 if (PlayState == PlayerPlayState.Playing || PlayState == PlayerPlayState.Paused)
                     PauseMedia(PlayerPlayState.Stop);
                 _player.MediaPlayer.Source = null;
+
                 bool played = await TryPlayRadioByPath(path);
+
                 if (!played)
                     Log.Print($"Radio station not found in map: {path}");
+
                 fileType = FileType.Audio;
                 return;
             }
@@ -1756,6 +1758,7 @@ public sealed partial class MainWindow
                     PlayMedia();
                     return;
                 }
+
                 if (!_currentSettings.AutoPlay)
                     PauseMedia(PlayerPlayState.Stop);
                 else
@@ -1769,9 +1772,11 @@ public sealed partial class MainWindow
             bool isCdda = path.StartsWith("cdda:", StringComparison.OrdinalIgnoreCase);
 
             StorageFile file = null;
+
             try
             {
                 string filePath = path;
+
                 if (isCdda)
                 {
                     var parts = path.Substring("cdda:".Length).Split('/');
@@ -1805,9 +1810,4 @@ public sealed partial class MainWindow
         }
         catch (Exception ex) { this.IsSafeOrThrow(ex); }
     }
-    private static string GetFalToken(string path) =>
-    Convert.ToBase64String(
-        System.Security.Cryptography.MD5.HashData(
-            System.Text.Encoding.UTF8.GetBytes(path)))
-    .Replace("/", "_").Replace("+", "-").Replace("=", "");
 }
