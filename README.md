@@ -25,6 +25,9 @@ Worlds most clean looking UI/UX multimedia player ever made..... ever
 *   **Legacy Media:** Experimental support for **CD & DVD** playback.
 
 ### Live Wallpaper Audio Visualizer
+<video src="https://github.com/user-attachments/assets/482d022e-ade8-4c18-b869-e2aab94245f7" width="100%" muted loop autoplay playsinline>
+</video>  
+
 *   **GPU Accellerated Audio Visualizer:** Super lightweight due to gpu utilization and will not slowing down your desktop experience. All thanks to Win2D 
 *   **Desktop Integration:** Use any of the built-in visualizer presets as your fully animated **Active Live Wallpaper**.
 *   **Preset Library:** A massive collection of visualizer presets included—ready to use out of the box.
