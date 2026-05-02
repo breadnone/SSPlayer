@@ -269,7 +269,6 @@ public sealed partial class MainWindow
 
     private void DisableBorderlessInteractions(UIElement rootElement)
     {
-        // Reset drag state
         _isDraggingWindow = false;
 
         if (_borderlessPressedHandler != null)
@@ -342,6 +341,7 @@ public sealed partial class MainWindow
                 UseLayoutRounding = true,
                 Children = {
                 new TextBlock {
+                    UseLayoutRounding = true,
                     Text = "Enter time (mm:ss or hh:mm:ss):",
                     FontSize = 12,
                     Opacity = 0.7
@@ -361,6 +361,7 @@ public sealed partial class MainWindow
         if (result == ContentDialogResult.Primary)
         {
             string input = inputField.Text.Trim();
+
             if (TryParseTime(input, out TimeSpan targetTime))
             {
                 var session = _player.MediaPlayer.PlaybackSession;
@@ -404,7 +405,6 @@ public sealed partial class MainWindow
     {
         result = TimeSpan.Zero;
 
-        // Handle plain seconds (e.g., "120")
         if (double.TryParse(input, out double totalSeconds))
         {
             result = TimeSpan.FromSeconds(totalSeconds);
@@ -454,7 +454,7 @@ public sealed partial class MainWindow
             PrimaryButtonText = "Jump",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = this.Content.XamlRoot // Required in WinUI 3
+            XamlRoot = this.Content.XamlRoot
         };
 
         var result = await dialog.ShowAsync();
@@ -469,7 +469,6 @@ public sealed partial class MainWindow
         var session = _player.MediaPlayer.PlaybackSession;
         if (session == null || session.NaturalDuration == TimeSpan.Zero) return;
 
-        // Determine FPS (Frames Per Second)
         double fps = 30.0; // Default fallback
 
         try
@@ -598,13 +597,11 @@ public sealed partial class MainWindow
             clip.TrimTimeFromEnd = originalDuration - end;
             composition.Clips.Add(clip);
 
-            // If composition has no duration, nothing to export
             if (composition.Duration == TimeSpan.Zero)
             {
                 return;
             }
 
-            // Compute precise ms per frame and centisecond delay
             double msPerFrame = 1000.0 / fps;
             ushort delayValue = (ushort)Math.Max(3, Math.Round(msPerFrame / 10.0));
             TimeSpan frameInterval = TimeSpan.FromMilliseconds(msPerFrame);
@@ -625,17 +622,13 @@ public sealed partial class MainWindow
                 {
                     try
                     {
-                        // Ensure we don't overshoot the duration
-                        var requestTime = currentTime >= duration
-                            ? TimeSpan.FromTicks(duration.Ticks - 1)
-                            : currentTime;
+                        var requestTime = currentTime >= duration ? TimeSpan.FromTicks(duration.Ticks - 1) : currentTime;
 
                         using (var thumbStream = await composition.GetThumbnailAsync(requestTime, scaledWidth, 0, VideoFramePrecision.NearestFrame))
                         {
                             var decoder = await BitmapDecoder.CreateAsync(thumbStream);
                             using (var softwareBitmap = await decoder.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied))
                             {
-                                // Pixel compression (optional posterize) - keep as in your base
                                 int width = softwareBitmap.PixelWidth;
                                 int height = softwareBitmap.PixelHeight;
                                 byte[] pixels = new byte[4 * width * height];
@@ -656,11 +649,8 @@ public sealed partial class MainWindow
                                 var processedBitmap = new SoftwareBitmap(BitmapPixelFormat.Bgra8, width, height, BitmapAlphaMode.Ignore);
                                 processedBitmap.CopyFromBuffer(pixels.AsBuffer());
 
-                                // Prepare per-frame properties BEFORE setting the bitmap
                                 var frameProperties = new BitmapPropertySet();
-                                // Delay in centiseconds (UInt16)
                                 frameProperties.Add("/grctle/Delay", new BitmapTypedValue(delayValue, PropertyType.UInt16));
-                                // Disposal method: 1 = do not dispose (keep), use UInt32 for safety
                                 frameProperties.Add("/grctle/Disposal", new BitmapTypedValue((uint)1, PropertyType.UInt32));
 
                                 if (compressionLevel > 0)
@@ -670,23 +660,17 @@ public sealed partial class MainWindow
 
                                 if (!isFirstFrame)
                                 {
-                                    // Move to next frame slot for subsequent frames
                                     await encoder.GoToNextFrameAsync();
                                 }
 
-                                // IMPORTANT: set properties BEFORE SetSoftwareBitmap so encoder writes GCE correctly
                                 await encoder.BitmapProperties.SetPropertiesAsync(frameProperties);
-
-                                // Set the bitmap for this frame
                                 encoder.SetSoftwareBitmap(processedBitmap);
-
                                 isFirstFrame = false;
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        // If thumbnail extraction fails near the end, break gracefully
                         System.Diagnostics.Debug.WriteLine($"Frame extraction failed at {currentTime}: {ex}");
                         break;
                     }
@@ -699,7 +683,6 @@ public sealed partial class MainWindow
         }
         catch (Exception ex) { this.IsSafeOrThrow(ex); }
     }
-
     private async Task ExportMarkerRangeAsAudio(TimeSpan start, TimeSpan end, string format)
     {
         try
@@ -726,6 +709,7 @@ public sealed partial class MainWindow
                 FontSize = 12,
                 Foreground = textBrush
             });
+
             panel.Children.Add(bitrateCombo);
 
             var dialog = new ContentDialog
@@ -743,10 +727,8 @@ public sealed partial class MainWindow
 
             if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
 
-            // Handle File Picker
             var savePicker = new FileSavePicker();
             InitializeWithWindow.Initialize(savePicker, _hwnd);
-
             string ext = $".{format.ToLower()}";
             savePicker.FileTypeChoices.Add($"{format.ToUpper()} Audio", new List<string> { ext });
             savePicker.SuggestedFileName = $"AudioClip_{DateTime.Now:mm-ss}";
@@ -754,7 +736,6 @@ public sealed partial class MainWindow
             var outputFile = await savePicker.PickSaveFileAsync();
             if (outputFile == null) return;
 
-            // Map selection to numeric bitrate (bits per second)
             uint selectedBitrate = bitrateCombo.SelectedIndex switch
             {
                 0 => 320000,
@@ -762,7 +743,6 @@ public sealed partial class MainWindow
                 _ => 128000
             };
 
-            // Prepare Encoding Profile
             MediaEncodingProfile profile = format.ToLower() switch
             {
                 "mp3" => MediaEncodingProfile.CreateMp3(AudioEncodingQuality.High),
@@ -772,18 +752,14 @@ public sealed partial class MainWindow
                 _ => MediaEncodingProfile.CreateMp3(AudioEncodingQuality.High)
             };
 
-            // Overload settings
             profile.Audio.Bitrate = selectedBitrate;
-            // You can also fix sample rate to 48kHz for high fidelity
             profile.Audio.SampleRate = 48000;
             ToggleNonBlockingLoading(true);
 
             try
             {
-                // Calling your AudioEngine's logic
                 bool success = await audioEngine.ExportAudioAs(outputFile, profile, (isError) =>
                 {
-                    // Optional callback logic here if needed
                 }, start, end);
 
                 if (!success) throw new Exception("Audio Engine failed to finalize the file.");
@@ -834,17 +810,18 @@ public sealed partial class MainWindow
                 FontSize = 12,
                 Foreground = textBrush
             });
+
             panel.Children.Add(qualityCombo);
 
             var dialog = new ContentDialog
             {
+                UseLayoutRounding = true,
                 Title = "Export Video Clip",
                 Content = panel,
                 PrimaryButtonText = "Export",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = this.Content.XamlRoot,
-                // Consistency styling
                 RequestedTheme = ElementTheme.Dark,
                 Background = semiTransBrush
             };
@@ -951,6 +928,7 @@ public sealed partial class MainWindow
 
             ContentDialog dialog = new ContentDialog
             {
+                UseLayoutRounding = true,
                 Title = "Export GIF",
                 Content = panel,
                 PrimaryButtonText = "Export",
@@ -960,7 +938,6 @@ public sealed partial class MainWindow
                 // Consistency styling
                 RequestedTheme = ElementTheme.Dark,
                 Background = semiTransBrush,
-                UseLayoutRounding = true
             };
 
             var result = await dialog.ShowAsync();
@@ -1258,7 +1235,7 @@ public sealed partial class MainWindow
             var img = await f.Properties.GetImagePropertiesAsync();
             if (MainTokenSource.IsCancelled()) return;
 
-            if(au == null && vid == null && img == null)
+            if (au == null && vid == null && img == null)
             {
                 return;
             }

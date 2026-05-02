@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace SSPlayer;
@@ -32,7 +31,7 @@ internal class Win32
     public const uint SWP_NOSIZE = 0x0001;
     public const uint SWP_NOMOVE = 0x0002;
     public const uint SWP_NOZORDER = 0x0004;
-    public const uint SWP_FRAMECHANGED = 0x0020; // This is the magic flag
+    public const uint SWP_FRAMECHANGED = 0x0020; 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 
@@ -69,7 +68,7 @@ internal class Win32
     public const int HTBOTTOMLEFT = 16;
     public const int HTBOTTOMRIGHT = 17;
     public const uint WM_SYSCOMMAND = 0x0112;
-    public const uint WM_LBUTTONUP = 0x0202; // Left button up message
+    public const uint WM_LBUTTONUP = 0x0202;
     public const int WM_NCLBUTTONDOWN = 0x00A1;
 
     [DllImport("user32.dll")]

@@ -21,18 +21,14 @@ using Windows.UI;
 
 namespace SSPlayer;
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Model
-// ─────────────────────────────────────────────────────────────────────────────
-
 public enum CodecStatus { Supported, NotSupported }
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2257", Justification = "False positive — INotifyPropertyChanged is not IDynamicInterfaceCastable")]
 public sealed class CodecInfo
 {
     public string DisplayName { get; init; }
-    public string Category { get; init; }  // "Video" | "Audio" | "Image"
+    public string Category { get; init; }
     public string Description { get; init; }
-    public string StoreUrl { get; init; }  // null = no Store package available
+    public string StoreUrl { get; init; }
     public CodecStatus Status { get; set; }
 }
 
@@ -42,22 +38,15 @@ public sealed class CodecInfo
 
 internal sealed class CodecCheckRecord
 {
-    public DateTime LastCheckedUtc { get; set; }  // when we last ran the check
-    public DateTime LastShownUtc { get; set; }  // when the dialog was last shown
+    public DateTime LastCheckedUtc { get; set; }
+    public DateTime LastShownUtc { get; set; }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Checker  (fully static — no instance state)
-// ─────────────────────────────────────────────────────────────────────────────
 
 public static class CodecChecker
 {
-    // How many days between re-showing the dialog while codecs are still missing
     public const int RecheckIntervalDays = 15;
 
 #if DEBUG
-    // In debug builds, lower the interval to 0 so the dialog always fires.
-    // Set to any small number (e.g. 0) to make testing instant.
     public const int DebugRecheckIntervalDays = 0;
 #endif
 
@@ -70,8 +59,6 @@ public static class CodecChecker
         string StoreUrl,
         ProbeKind Kind,
         string ProbeValue);
-
-    // ── Catalogue ─────────────────────────────────────────────────────────────
 
     private static readonly IReadOnlyList<CodecEntry> Catalogue = new[]
     {
@@ -175,9 +162,9 @@ public static class CodecChecker
 
     private static readonly HashSet<string> StoreVideo = new(StringComparer.OrdinalIgnoreCase)
     {
-        "hvc1", "hev1",  // HEVC Video Extensions
-        "av01", "av1", "AV1", "ivf",   // AV1 Video Extension
-        "vp09",           // VP9 Video Extensions
+        "hvc1", "hev1",
+        "av01", "av1", "AV1", "ivf",
+        "vp09",
     };
 
     private static readonly HashSet<string> InboxAudio = new(StringComparer.OrdinalIgnoreCase)
@@ -185,8 +172,6 @@ public static class CodecChecker
         "mp3a", "mp4a", "WMAP", "fLaC", "alac",
         "Opus", "vrbs", "mp2a", "ac-3", "ec-3", "dtsc",
     };
-
-    // ── Public API ────────────────────────────────────────────────────────────
 
     /// <summary>Probes all codecs concurrently and returns the complete result list.</summary>
     public static async Task<IReadOnlyList<CodecInfo>> CheckAllAsync()
@@ -213,8 +198,6 @@ public static class CodecChecker
 
         return await Task.WhenAll(tasks);
     }
-
-    // ── Probes ────────────────────────────────────────────────────────────────
 
     private static async Task<CodecStatus> ProbeVideoAsync(string subtype)
     {
@@ -253,7 +236,6 @@ public static class CodecChecker
         {
             var query = new Windows.Media.Core.CodecQuery();
             var codecs = await query.FindAllAsync(CodecKind.Video, CodecCategory.Decoder, subtype);
-            // Check if any registered decoder supports the AV1 GUID or the FourCC string
             isAv1Installed = codecs.Any(c => c.Subtypes.Any(s => s.Equals(Av1SubtypeGuid, StringComparison.OrdinalIgnoreCase) || s.Contains("av01") || s.Contains("AV01")));
         }
 
@@ -279,10 +261,6 @@ public static class CodecChecker
         return CodecStatus.NotSupported;
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  MainWindow — scheduling, dialog, cards
-// ─────────────────────────────────────────────────────────────────────────────
 
 public sealed partial class MainWindow
 {
@@ -310,7 +288,6 @@ public sealed partial class MainWindow
         {
             try
             {
-                // ── Read persisted record ─────────────────────────────────
                 var record = LoadCodecCheckRecord();
 
                 int intervalDays =
@@ -319,10 +296,8 @@ public sealed partial class MainWindow
 #else
                     CodecChecker.RecheckIntervalDays;
 #endif
-                // Not due yet?
                 double daysSinceLastShown = (DateTime.UtcNow - record.LastShownUtc).TotalDays;
-                bool isDue = record.LastShownUtc == DateTime.MinValue   // first ever run
-                          || daysSinceLastShown >= intervalDays;
+                bool isDue = record.LastShownUtc == DateTime.MinValue || daysSinceLastShown >= intervalDays;
 
                 if (!isDue)
                 {
@@ -331,32 +306,22 @@ public sealed partial class MainWindow
                     return;
                 }
 
-                // ── Probe ─────────────────────────────────────────────────
                 var results = await CodecChecker.CheckAllAsync();
                 record.LastCheckedUtc = DateTime.UtcNow;
-
-                var missing = results
-                    .Where(static c => c.Status == CodecStatus.NotSupported && c.StoreUrl != null)
-                    .ToList();
+                var missing = results.Where(static c => c.Status == CodecStatus.NotSupported && c.StoreUrl != null).ToList();
 
                 if (missing.Count == 0)
                 {
-                    // All good — update check timestamp but don't show dialog
                     record.LastShownUtc = DateTime.UtcNow;
                     SaveCodecCheckRecord(record);
                     Log.Print("Codec check: all relevant codecs present — no dialog needed.");
                     return;
                 }
 
-                // Update LastShownUtc now, before showing — so even a force-quit
-                // won't cause a double-show on the very next launch.
                 record.LastShownUtc = DateTime.UtcNow;
                 SaveCodecCheckRecord(record);
-
                 Log.Print($"Codec check: {missing.Count} missing — showing dialog.");
-
-                DispatcherQueue.TryEnqueue(async () =>
-                    await ShowCodecDialogAsync(results, missing));
+                DispatcherQueue.TryEnqueue(async () => await ShowCodecDialogAsync(results, missing));
             }
             catch (Exception ex) { Log.Print($"TriggerCodecCheck: {ex.Message}"); }
         });
@@ -421,7 +386,7 @@ public sealed partial class MainWindow
             int missingCount = missing.Count;
 
             // ── Summary banner ────────────────────────────────────────────
-            var summaryGrid = new Grid { UseLayoutRounding = true,Margin = new Thickness(0, 0, 0, 0) };
+            var summaryGrid = new Grid { UseLayoutRounding = true, Margin = new Thickness(0, 0, 0, 0) };
             summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 

@@ -2,9 +2,7 @@
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
-using SSPlayer;
 using System;
-using System.Runtime.InteropServices;
 using Windows.Foundation;
 
 namespace SSPlayer;
@@ -68,18 +66,15 @@ public class LiveWallpaper : Window
             _canvas.RemoveFromVisualTree();
             _canvas = null;
         }
+
         _updateHandler = null;
         _drawHandler = null;
         _engine = null;
 
-        // Restore desktop wallpaper layer
         if (_hWnd != IntPtr.Zero)
         {
-            // 1. Unparent from WorkerW — move window back to normal desktop ownership
             Win32.SetParent(_hWnd, IntPtr.Zero);
 
-            // 2. Hide the WorkerW that was exposed by the 0x052C message.
-            // Find it again and hide it so the normal desktop renders underneath.
             Win32.EnumWindows((topHwnd, lParam) =>
             {
                 IntPtr shellView = Win32.FindWindowEx(topHwnd, IntPtr.Zero, "SHELLDLL_DefView", null);
@@ -87,25 +82,21 @@ public class LiveWallpaper : Window
                 {
                     IntPtr workerW = Win32.FindWindowEx(IntPtr.Zero, topHwnd, "WorkerW", null);
                     if (workerW != IntPtr.Zero)
-                        SSPlayer.Win32.ShowWindow(workerW, 0); // SW_HIDE = 0
+                        Win32.ShowWindow(workerW, 0);
                 }
                 return true;
             }, IntPtr.Zero);
 
-            // 3. Force desktop and Progman to repaint so wallpaper reappears cleanly
-            IntPtr progman = SSPlayer.Win32.FindWindow("Progman", null);
+            IntPtr progman = Win32.FindWindow("Progman", null);
+            
             if (progman != IntPtr.Zero)
-                SSPlayer.Win32.InvalidateRect(progman, IntPtr.Zero, true);
+                Win32.InvalidateRect(progman, IntPtr.Zero, true);
 
-            // 4. Tell Windows to re-apply the wallpaper — this is the most reliable
-            // way to flush the desktop compositor back to its normal state.
-            // SPI_SETDESKWALLPAPER = 0x0014, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE = 0x03
-            SSPlayer.Win32.SystemParametersInfo(0x0014, 0, null, 0x03);
+            Win32.SystemParametersInfo(0x0014, 0, null, 0x03);
 
             _hWnd = IntPtr.Zero;
         }
     }
-
     private void OnFirstActivated(object sender, WindowActivatedEventArgs e)
     {
         if (_initialized) return;
@@ -145,7 +136,7 @@ public class LiveWallpaper : Window
             return true;
         }, IntPtr.Zero);
 
-        if (workerW == IntPtr.Zero) workerW = progman; // Last resort
+        if (workerW == IntPtr.Zero) workerW = progman;
 
         if (workerW != IntPtr.Zero)
         {

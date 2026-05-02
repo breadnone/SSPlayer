@@ -71,8 +71,6 @@ public partial class AudioEngine
     private float[] _lerpedPeaks = new float[16];
     private float _pulseScale = 1.0f;
     int _enableVisualizer = 0;
-
-    // Helper to get a dynamic color based on audio intensity and time
     private Color GetDynamicColor(float offset = 0, byte alpha = 255)
     {
         float hue = (_hueOffset + offset) % 360;
@@ -87,8 +85,6 @@ public partial class AudioEngine
         float x = c * (1 - Math.Abs((hue / 60) % 2 - 1));
         float m = v - c;
 
-        // Corrected switch expression with proper range boundaries
-        // Explicitly casting the first result to (float, float, float) resolves the ambiguity
         (float r, float g, float b) = hue switch
         {
             >= 0 and < 60 => ((float)c, x, 0f),
@@ -142,7 +138,6 @@ public partial class AudioEngine
 
         lock (_lockdraw)
         {
-            // 1. Snapshot the current stars and clear the list for refilling
             count = _starfield.Count;
             if (count > 0)
             {
@@ -151,7 +146,6 @@ public partial class AudioEngine
                 _starfield.Clear();
             }
 
-            // 2. KEEP ORIGINAL SPAWNING LOGIC: Add new stars directly to the (now empty) list
             if (_totalVolume > 0.4f && count < 150)
             {
                 float angle = (float)(_rng.NextDouble() * Math.PI * 2);
@@ -165,7 +159,6 @@ public partial class AudioEngine
             }
         }
 
-        // 3. Process the physics logic using the rented buffer
         if (rentedArray != null)
         {
             try
@@ -174,12 +167,10 @@ public partial class AudioEngine
                 {
                     var s = rentedArray[i];
 
-                    // Keep your original physics calculations
                     s.Pos += s.Vel;
                     s.Vel *= s.Accel;
                     s.Life -= 0.015f;
 
-                    // 4. If the star is still alive, add it back to the main list
                     if (s.Life > 0)
                     {
                         lock (_lockdraw)
@@ -223,7 +214,7 @@ public partial class AudioEngine
 
         lock (_lockdraw)
         {
-            args.DrawingSession.Clear(Colors.Transparent); // Must be FIRST, every frame
+            args.DrawingSession.Clear(Colors.Transparent);
             var ds = args.DrawingSession;
             DrawStarfield(ds);
 
@@ -547,12 +538,6 @@ public partial class AudioEngine
 
             }
 
-            /*
-        SolarFlare,CrystalCave,TeslaCoil, HurricaneEye, VolcanoEruption, AuroraBorealis, QuantumBubbles, MagneticField, SolarSail,
-        IceCrystals, Thunderstorm, RainbowBridge, FireworksDisplay, Sandstorm, TornadoAlley, BioluminescentBay,
-        SolarEclipse, MoonPhases, StainedGlass, Kaleidoscope, LavaLamp, HologramProjector,
-        AtomicNucleus, SolarPanelArray, WindTurbine, DamWaterfall, SteamEngine, ClockworkMechanism, MorseCodeBeacon
-             */
             DrawGlobalOverlays(ds);
         }
     }
@@ -580,29 +565,18 @@ public partial class AudioEngine
             // Calculate X positions for the two strands
             float x1 = center.X + (float)Math.Sin(rotation) * amplitude;
             float x2 = center.X + (float)Math.Sin(rotation + Math.PI) * amplitude;
-
-            // Depth simulation (Z-axis) using scale
             float z1 = (float)Math.Cos(rotation);
             float z2 = (float)Math.Cos(rotation + Math.PI);
-
             float scale1 = 1.0f + (z1 * 0.4f);
             float scale2 = 1.0f + (z2 * 0.4f);
 
-            // Colors - High notes make the "cells" glow brighter
             Color col1 = GetDynamicColor(i * 8, (byte)(150 + (z1 * 100)));
             Color col2 = GetDynamicColor(i * 8 + 180, (byte)(150 + (z2 * 100)));
 
-            // 1. Draw Connection Rungs (Base Pairs)
-            // Only draw rungs when one strand is "behind" the other for 3D effect
             float rungAlpha = Math.Clamp(0.3f + bassIntensity, 0, 1);
             ds.DrawLine(x1, y, x2, y, Color.FromArgb((byte)(rungAlpha * 255), 200, 200, 255), 1.5f);
-
-            // 2. Draw the "Nucleotides" (Sugar-Phosphate backbone nodes)
-            // Strand 1
             ds.FillCircle(x1, y, (4 * scale1) + (trebleIntensity * 10), col1);
             ds.FillCircle(x1, y, 1.5f * scale1, Colors.White); // Inner core glow
-
-            // Strand 2
             ds.FillCircle(x2, y, (4 * scale2) + (trebleIntensity * 10), col2);
             ds.FillCircle(x2, y, 1.5f * scale2, Colors.White);
         }
@@ -618,7 +592,6 @@ public partial class AudioEngine
             float x = (i + 1) * sectionWidth;
             float angleOffset = i * 0.5f + _waveOffset;
             float val = _visualizerPeaks[i] * height * 0.4f * Sensitivity;
-
             float y1 = centerY + (float)Math.Sin(angleOffset) * (helixWidth + val);
             float y2 = centerY + (float)Math.Sin(angleOffset + Math.PI) * (helixWidth + val);
 
@@ -637,7 +610,6 @@ public partial class AudioEngine
         float centerY = height / 2;
         float sectionWidth = targetBarCount > 1 ? width / (targetBarCount - 1) : width;
         Color accentColor = GetDynamicColor();
-
         using var builder = new CanvasPathBuilder(ds);
         builder.BeginFigure(0, centerY);
 
@@ -659,7 +631,6 @@ public partial class AudioEngine
 
         builder.EndFigure(CanvasFigureLoop.Closed);
         using var geometry = CanvasGeometry.CreatePath(builder);
-
         ds.DrawGeometry(geometry, Color.FromArgb(80, accentColor.R, accentColor.G, accentColor.B), 8f);
         ds.DrawGeometry(geometry, Colors.White, 2.5f);
         ds.FillGeometry(geometry, Color.FromArgb((byte)(40 + _totalVolume * 60), accentColor.R, accentColor.G, accentColor.B));
@@ -695,7 +666,6 @@ public partial class AudioEngine
             float val = _visualizerPeaks[i] * height * Sensitivity;
             float x = (i * barWidth) + gap;
             float w = barWidth - (gap * 2);
-
             Rect rect = new Rect(x, height - val, w, val);
             Color barCol = GetDynamicColor(i * 5);
 
@@ -790,8 +760,6 @@ public partial class AudioEngine
         using var poly = CanvasGeometry.CreatePolygon(ds, points);
         ds.DrawGeometry(poly, col, 4f);
         ds.FillGeometry(poly, Color.FromArgb(60, col.R, col.G, col.B));
-
-        // Internal pulse
         ds.DrawCircle(center, (h * 0.15f) + (_totalVolume * 40), Color.FromArgb(100, 255, 255, 255), 2f);
     }
 
@@ -812,13 +780,12 @@ public partial class AudioEngine
 
     private void DrawStarfield(CanvasDrawingSession ds)
     {
-        // Define the type alias for the tuple to keep the code readable
         var pool = ArrayPool<(Vector2 Pos, Vector2 Vel, float Accel, float Life)>.Shared;
 
         int count = 0;
         (Vector2 Pos, Vector2 Vel, float Accel, float Life)[] rentedArray = null;
 
-        lock (_lockdraw) // Using your existing _lockdraw object
+        lock (_lockdraw)
         {
             count = _starfield.Count;
 
@@ -836,7 +803,6 @@ public partial class AudioEngine
                 for (int i = 0; i < count; i++)
                 {
                     var s = rentedArray[i];
-                    // Using s.Life and s.Pos from the tuple
                     float size = (1.0f - s.Life) * 6f;
                     Color col = GetDynamicColor(s.Life * 100, (byte)(s.Life * 255));
 
@@ -901,6 +867,7 @@ public partial class AudioEngine
     private void DrawVortex(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 center = new Vector2(w / 2, h / 2);
+
         for (int i = 0; i < 64; i++)
         {
             float angle = i * 0.2f + _rotationAngle;
@@ -919,7 +886,6 @@ public partial class AudioEngine
             DrawBars(ds, w * scale, h * scale, count, false);
         }
     }
-
     private void DrawFractalTree(CanvasDrawingSession ds, float w, float h, int count)
     {
         DrawBranch(ds, new Vector2(w / 2, h), -90, 60 + (_visualizerPeaks[0] * 100), 0);
@@ -928,18 +894,11 @@ public partial class AudioEngine
     {
         if (depth > 6 || len < 2) return;
 
-        // Convert degrees to radians
         float rad = angle * 0.0174533f;
-        System.Numerics.Vector2 end = start + new System.Numerics.Vector2((float)Math.Cos(rad) * len, (float)Math.Sin(rad) * len);
-
-        // Draw the branch
+        Vector2 end = start + new Vector2((float)Math.Cos(rad) * len, (float)Math.Sin(rad) * len);
         ds.DrawLine(start, end, GetDynamicColor(depth * 30), 8 - depth);
-
         float nextLen = len * 0.75f;
-        // Spread branches based on music volume
         float spread = 20 + (_totalVolume * 40);
-
-        // Recursive calls for left and right branches
         DrawBranch(ds, end, angle - spread, nextLen, depth + 1);
         DrawBranch(ds, end, angle + spread, nextLen, depth + 1);
     }
@@ -948,12 +907,14 @@ public partial class AudioEngine
         Vector2 center = new Vector2(w / 2, h / 2);
         using var pb = new CanvasPathBuilder(ds);
         pb.BeginFigure(center.X, center.Y - 80);
+
         for (float a = 0; a < Math.PI * 2; a += 0.2f)
         {
             int idx = (int)((a / (Math.PI * 2)) * (count - 1));
             float r = 80 + _visualizerPeaks[idx] * 100;
             pb.AddLine(center.X + (float)Math.Cos(a) * r, center.Y + (float)Math.Sin(a) * r);
         }
+
         pb.EndFigure(CanvasFigureLoop.Closed);
         ds.FillGeometry(CanvasGeometry.CreatePath(pb), GetDynamicColor(0, 200));
     }
@@ -970,6 +931,7 @@ public partial class AudioEngine
     private void DrawHexagonShield(CanvasDrawingSession ds, float w, float h, int count)
     {
         float size = 35;
+
         for (float x = 0; x < w + size; x += size * 1.5f)
         {
             for (float y = 0; y < h + size; y += size)
@@ -984,6 +946,7 @@ public partial class AudioEngine
     private void DrawPulseRings(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 center = new Vector2(w / 2, h / 2);
+
         for (int i = 0; i < 6; i++)
         {
             float r = ((_waveOffset * 40 + i * 60) % 300) * (0.5f + _totalVolume);
@@ -995,6 +958,7 @@ public partial class AudioEngine
     private void DrawStarBurst(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 center = new Vector2(w / 2, h / 2);
+
         for (int i = 0; i < count; i++)
         {
             float angle = (i * (float)Math.PI * 2 / count) + _rotationAngle;
@@ -1008,14 +972,12 @@ public partial class AudioEngine
         Vector2 vp = new Vector2(w / 2, horizon);
         Color col = GetDynamicColor();
 
-        // Vertical Perspective Lines
         for (int i = -15; i <= 15; i++)
         {
             float x = (w / 2) + (i * w * 0.1f);
             ds.DrawLine(vp, new Vector2(x, h), Color.FromArgb(100, col.R, col.G, col.B), 2f);
         }
 
-        // Audio-reactive horizontal bars moving toward user
         for (int i = 0; i < 10; i++)
         {
             float z = ((i + _waveOffset) % 10) / 10f;
@@ -1067,7 +1029,6 @@ public partial class AudioEngine
 
         for (float y = -radius; y < radius; y += 10)
         {
-            // Outrun sliced sun effect
             float sliceW = (float)Math.Sqrt(radius * radius - y * y) * 2;
             float gap = Math.Max(2, (y + radius) / radius * 8 * (1 - _totalVolume));
             ds.FillRectangle(center.X - sliceW / 2, center.Y + y, sliceW, 10 - gap, GetDynamicColor(y));
@@ -1077,9 +1038,11 @@ public partial class AudioEngine
     private void DrawWarpDrive(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 center = new Vector2(w / 2, h / 2);
+
         for (int i = 0; i < count; i++)
         {
             float p = _visualizerPeaks[i];
+
             for (int j = 0; j < 3; j++)
             {
                 float ang = (i * 6.28f / count) + (j * 0.1f);
@@ -1161,11 +1124,8 @@ public partial class AudioEngine
 
         for (int i = 0; i < count; i++)
         {
-            // Prevent division by zero if count is 1
             float divisor = count > 1 ? count - 1 : 1;
             float x = (w / divisor) * i;
-
-            // Ensure index safety for _visualizerPeaks
             float peak = i < _visualizerPeaks.Length ? _visualizerPeaks[i] : 0;
             float y = (h * 0.7f) - (peak * h * 0.4f);
             pb.AddLine(x, y);
@@ -1174,10 +1134,7 @@ public partial class AudioEngine
         pb.AddLine(w, h);
         pb.EndFigure(CanvasFigureLoop.Closed);
 
-        // Create the geometry ONCE from the builder
         using var geometry = CanvasGeometry.CreatePath(pb);
-
-        // Now draw and fill that single geometry object
         ds.FillGeometry(geometry, GetDynamicColor(0, 100));
         ds.DrawGeometry(geometry, Colors.Cyan, 2f);
     }
@@ -1185,6 +1142,7 @@ public partial class AudioEngine
     private void DrawCometTail(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 head = new Vector2((_waveOffset * 100) % w, h * 0.3f + (float)Math.Sin(_waveOffset) * 100);
+
         for (int i = 0; i < 20; i++)
         {
             float p = _visualizerPeaks[i % count];
@@ -1195,6 +1153,7 @@ public partial class AudioEngine
     private void DrawEventHorizon(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 center = new Vector2(w / 2, h / 2);
+
         for (int i = 0; i < count; i++)
         {
             float angle = (i * 6.28f / count) + _rotationAngle;
@@ -1207,6 +1166,7 @@ public partial class AudioEngine
     private void DrawAsteroidBelt(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 center = new Vector2(w / 2, h / 2);
+
         for (int i = 0; i < 30; i++)
         {
             float ang = i * 0.2f + _rotationAngle;
@@ -1222,6 +1182,7 @@ public partial class AudioEngine
         ds.DrawCircle(center, radius, Colors.LimeGreen, 2f);
         float sweepAng = _rotationAngle % 6.28f;
         ds.DrawLine(center, center + new Vector2((float)Math.Cos(sweepAng) * radius, (float)Math.Sin(sweepAng) * radius), Colors.LimeGreen, 3f);
+
         for (int i = 0; i < count; i++)
         {
             if (_visualizerPeaks[i] > 0.7f)
@@ -1279,6 +1240,7 @@ public partial class AudioEngine
     private void DrawGalacticSpiral(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 center = new Vector2(w / 2, h / 2);
+
         for (int i = 0; i < 100; i++)
         {
             float a = i * 0.1f + _rotationAngle;
@@ -1304,8 +1266,8 @@ public partial class AudioEngine
     {
         float pressPos = _totalVolume * h * 0.4f;
         Color metal = Colors.Silver;
-        ds.FillRectangle(w * 0.2f, 0, w * 0.6f, pressPos, metal); // Top plate
-        ds.FillRectangle(w * 0.2f, h - 40, w * 0.6f, 40, metal);  // Base
+        ds.FillRectangle(w * 0.2f, 0, w * 0.6f, pressPos, metal);
+        ds.FillRectangle(w * 0.2f, h - 40, w * 0.6f, 40, metal);
 
         for (int i = 0; i < count; i++)
         {
@@ -1328,6 +1290,7 @@ public partial class AudioEngine
     private void DrawFluxCapacitor(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 center = new Vector2(w / 2, h / 2);
+
         for (int i = 0; i < 3; i++)
         {
             float angle = (i * 120) * 0.0174533f;
@@ -1367,6 +1330,7 @@ public partial class AudioEngine
     {
         using var pb = new CanvasPathBuilder(ds);
         pb.BeginFigure(0, h * 0.8f);
+
         for (int i = 0; i < count; i++)
         {
             float divisor = count > 1 ? count - 1 : 1;
@@ -1374,12 +1338,12 @@ public partial class AudioEngine
             float y = (h * 0.8f) - (_visualizerPeaks[i] * h * 0.5f);
             pb.AddLine(x, y);
         }
+
         pb.AddLine(w, h * 0.8f);
         pb.EndFigure(CanvasFigureLoop.Open);
 
         using var geo = CanvasGeometry.CreatePath(pb);
         ds.DrawGeometry(geo, Colors.Cyan, 2f);
-        // Draw vertical grid lines on the "face"
         for (int i = 0; i < count; i++) ds.DrawLine((w / count) * i, h * 0.8f, (w / count) * i, h, Color.FromArgb(50, 0, 255, 255), 1f);
     }
 
@@ -1393,7 +1357,7 @@ public partial class AudioEngine
             float bH = _visualizerPeaks[i] * h * 0.6f;
             Rect r = new Rect(i * bWidth, h - bH, bWidth - 5, bH);
             ds.DrawRectangle(r, GetDynamicColor(i * 10), 1f);
-            // Wireframe windows
+
             for (float wy = h - bH + 10; wy < h; wy += 20)
                 ds.DrawLine(i * bWidth, wy, (i + 1) * bWidth - 5, wy, Color.FromArgb(40, 255, 255, 255), 1f);
         }
@@ -1439,6 +1403,7 @@ public partial class AudioEngine
     private void DrawWormholeTravel(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 center = new Vector2(w / 2, h / 2);
+
         for (int i = 0; i < 15; i++)
         {
             float r = ((i * 40 + _waveOffset * 100) % 600);
@@ -1485,7 +1450,7 @@ public partial class AudioEngine
             float r = 60 + _visualizerPeaks[i * 4] * 40;
             Vector2 pos = new Vector2(w * 0.25f * (i + 1), h / 2);
             ds.DrawCircle(pos, r, Colors.Goldenrod, 5f);
-            // Teeth
+
             for (int t = 0; t < 12; t++)
             {
                 float ang = (t * 30) * 0.0174533f + (i % 2 == 0 ? _rotationAngle : -_rotationAngle);
@@ -1513,7 +1478,6 @@ public partial class AudioEngine
     }
     private void DrawVHSVerticalScan(CanvasDrawingSession ds, float w, float h, int count)
     {
-        // A moving scanning bar with bokeh "dust" that only appears on the bar
         float scanY = (_waveOffset * 300) % h;
         ds.FillRectangle(0, scanY, w, 20, GetDynamicColor(0, 40));
         ds.DrawLine(0, scanY, w, scanY, Colors.Cyan, 1f);
@@ -1528,7 +1492,6 @@ public partial class AudioEngine
 
     private void DrawCyberWeb(CanvasDrawingSession ds, float w, float h, int count)
     {
-        // Connects peak points with a web of neon lines
         Vector2[] points = new Vector2[count];
         for (int i = 0; i < count; i++)
             points[i] = new Vector2((w / count) * i, h - (_visualizerPeaks[i] * h * 0.5f));
@@ -1545,7 +1508,6 @@ public partial class AudioEngine
 
     private void DrawBokehWaterfall(CanvasDrawingSession ds, float w, float h, int count)
     {
-        // Glowing particles that "splash" off the peak levels
         for (int i = 0; i < count; i++)
         {
             float p = _visualizerPeaks[i];
@@ -1578,7 +1540,6 @@ public partial class AudioEngine
 
     private void DrawAnamorphicFlares(CanvasDrawingSession ds, float w, float h, int count)
     {
-        // Simulates horizontal lens flares that react to volume
         for (int i = 0; i < 5; i++)
         {
             float y = (h / 6) * (i + 1);
@@ -1591,8 +1552,8 @@ public partial class AudioEngine
 
     private void DrawHydraulicBars(CanvasDrawingSession ds, float w, float h, int count)
     {
-        // Mechanical pistons with "steam" (bokeh) at the top
         float barW = w / count;
+
         for (int i = 0; i < count; i++)
         {
             float val = _visualizerPeaks[i] * h * 0.7f;
@@ -1606,6 +1567,7 @@ public partial class AudioEngine
     private void DrawNeonClockwork(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 center = new Vector2(w / 2, h / 2);
+
         for (int i = 0; i < 4; i++)
         {
             float rot = _waveOffset * (i % 2 == 0 ? 1 : -1);
@@ -1625,6 +1587,7 @@ public partial class AudioEngine
     private void DrawStarfieldWarp(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 center = new Vector2(w / 2, h / 2);
+
         for (int i = 0; i < 50; i++)
         {
             float z = ((i * 0.02f + _waveOffset * 0.1f) % 1.0f);
@@ -1638,7 +1601,6 @@ public partial class AudioEngine
 
     private void DrawDataRainfall(CanvasDrawingSession ds, float w, float h, int count)
     {
-        // Cascading blocks of "data"
         for (int i = 0; i < 20; i++)
         {
             float x = (w / 20) * i;
@@ -1651,6 +1613,7 @@ public partial class AudioEngine
     private void DrawNeonPulseRings(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 center = new Vector2(w / 2, h / 2);
+
         for (int i = 0; i < 5; i++)
         {
             float p = _visualizerPeaks[i * 3 % count];
@@ -1661,9 +1624,9 @@ public partial class AudioEngine
 
     private void DrawOutrunSunGlow(CanvasDrawingSession ds, float w, float h, int count)
     {
-        // Sun that "bleeds" color onto the floor
         Vector2 sun = new Vector2(w / 2, h * 0.4f);
         ds.FillCircle(sun, 100 + _totalVolume * 50, GetDynamicColor(20, 100));
+
         for (int i = 0; i < count; i++)
         {
             float p = _visualizerPeaks[i];
@@ -1673,8 +1636,8 @@ public partial class AudioEngine
 
     private void DrawMechanicalWave(CanvasDrawingSession ds, float w, float h, int count)
     {
-        // Connected "plates" moving up and down
         float pW = w / count;
+
         for (int i = 0; i < count; i++)
         {
             float y = h / 2 - (_visualizerPeaks[i] * h * 0.4f);
@@ -1689,7 +1652,6 @@ public partial class AudioEngine
 
     private void DrawCyberRibbon(CanvasDrawingSession ds, float w, float h, int count)
     {
-        // 1. Check for valid count to prevent division by zero
         if (count < 2) return;
 
         using (var pb = new CanvasPathBuilder(ds))
@@ -1700,22 +1662,16 @@ public partial class AudioEngine
             {
                 float divisor = count > 1 ? count - 1 : 1;
                 float x = (w / divisor) * i;
-
-                // Index safety check
                 float peak = i < _visualizerPeaks.Length ? _visualizerPeaks[i] : 0;
                 float y = h / 2 + (float)Math.Cos(_waveOffset + i * 0.5f) * (peak * 200);
-
                 pb.AddLine(x, y);
             }
 
-            // CRITICAL: You MUST end the figure before creating geometry
             pb.EndFigure(CanvasFigureLoop.Open);
 
             using (var geo = CanvasGeometry.CreatePath(pb))
             {
-                // Draw the thick neon glow
                 ds.DrawGeometry(geo, GetDynamicColor(), 8f);
-                // Draw the bright "core"
                 ds.DrawGeometry(geo, Colors.White, 2f);
             }
         }
@@ -1724,6 +1680,7 @@ public partial class AudioEngine
     private void DrawBokehTunnel(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 center = new Vector2(w / 2, h / 2);
+
         for (int i = 0; i < 20; i++)
         {
             float scale = ((i + _waveOffset) % 20) / 20f;
@@ -1734,7 +1691,6 @@ public partial class AudioEngine
 
     private void DrawPrismShatter(CanvasDrawingSession ds, float w, float h, int count)
     {
-        // Random triangles that jump and rotate
         for (int i = 0; i < 10; i++)
         {
             float p = _visualizerPeaks[i % count];
@@ -1772,6 +1728,7 @@ public partial class AudioEngine
         Vector2 center = new Vector2(w / 2, h / 2);
         float r = 100 + _totalVolume * 50;
         ds.DrawCircle(center, r, Colors.Cyan, 5f);
+
         for (int i = 0; i < 12; i++)
         {
             float angle = (i * 30 + _waveOffset * 50) * 0.0174f;
@@ -1784,6 +1741,7 @@ public partial class AudioEngine
     private void DrawDigitalHorizon(CanvasDrawingSession ds, float w, float h, int count)
     {
         float horizonY = h * 0.6f;
+
         for (int i = 0; i < 10; i++)
         {
             float p = _visualizerPeaks[i % count];
@@ -1795,12 +1753,9 @@ public partial class AudioEngine
     {
         Vector2 center = new Vector2(w / 2, h / 2);
         float intensity = _totalVolume * 2f;
-
-        // Core
         ds.FillCircle(center, 30 + intensity * 20, Colors.Orange);
         ds.FillCircle(center, 20 + intensity * 10, Colors.Yellow);
 
-        // Flares radiating outward
         for (int i = 0; i < count; i++)
         {
             float angle = (i * 6.28318f / count) + _rotationAngle;
@@ -1820,12 +1775,11 @@ public partial class AudioEngine
             float crystalHeight = _visualizerPeaks[i] * h * 0.7f;
             float crystalWidth = (w / count) * 0.6f;
 
-            // Crystal shape (triangle/polygon)
             Vector2[] crystal = new Vector2[]
             {
-            new Vector2(x + crystalWidth / 2, h - crystalHeight),
-            new Vector2(x + crystalWidth, h),
-            new Vector2(x, h)
+                new Vector2(x + crystalWidth / 2, h - crystalHeight),
+                new Vector2(x + crystalWidth, h),
+                new Vector2(x, h)
             };
 
             using (var geo = CanvasGeometry.CreatePolygon(ds, crystal))
@@ -1841,10 +1795,8 @@ public partial class AudioEngine
         Vector2 basePos = new Vector2(w / 2, h * 0.8f);
         float sparkHeight = _visualizerPeaks[0] * h * 0.5f;
 
-        // Coil tower
         ds.DrawLine(basePos, new Vector2(w / 2, h * 0.2f), Colors.Silver, 10f);
 
-        // Sparks
         for (int i = 0; i < 20; i++)
         {
             float angle = (float)(_rng.NextDouble() * Math.PI * 2);
@@ -1858,10 +1810,8 @@ public partial class AudioEngine
     {
         Vector2 center = new Vector2(w / 2, h / 2);
 
-        // Eye
         ds.FillCircle(center, 20 + _totalVolume * 30, Colors.White);
 
-        // Spiral arms
         for (int i = 0; i < 360; i += 10)
         {
             float angle = i * 0.0174533f + _rotationAngle;
@@ -1878,11 +1828,9 @@ public partial class AudioEngine
         Vector2 volcanoBase = new Vector2(w / 2, h);
         Vector2 crater = new Vector2(w / 2, h * 0.7f);
 
-        // Volcano shape
         ds.DrawLine(new Vector2(w * 0.3f, h), crater, Colors.DarkGray, 20f);
         ds.DrawLine(new Vector2(w * 0.7f, h), crater, Colors.DarkGray, 20f);
 
-        // Eruption particles
         for (int i = 0; i < 50; i++)
         {
             if (_visualizerPeaks[i % count] > 0.3f)
@@ -1940,7 +1888,6 @@ public partial class AudioEngine
         Vector2 north = new Vector2(w * 0.4f, h * 0.3f);
         Vector2 south = new Vector2(w * 0.6f, h * 0.7f);
 
-        // Field lines
         for (int i = 0; i < count; i++)
         {
             float curve = _visualizerPeaks[i] * 100;
@@ -1971,12 +1918,11 @@ public partial class AudioEngine
             float radius = 50 + _visualizerPeaks[i] * 80;
             Vector2 point = center + new Vector2((float)Math.Cos(angle) * radius, (float)Math.Sin(angle) * radius);
 
-            // Sail panels
             Vector2[] sail = new Vector2[]
             {
-            center,
-            point,
-            center + new Vector2((float)Math.Cos(angle + 0.3f) * radius, (float)Math.Sin(angle + 0.3f) * radius)
+                center,
+                point,
+                center + new Vector2((float)Math.Cos(angle + 0.3f) * radius, (float)Math.Sin(angle + 0.3f) * radius)
             };
 
             using (var geo = CanvasGeometry.CreatePolygon(ds, sail))
@@ -1995,14 +1941,11 @@ public partial class AudioEngine
             float y = h - _visualizerPeaks[i] * h * 0.8f;
             float crystalSize = 10 + _visualizerPeaks[i] * 30;
 
-            // Draw snowflake-like crystal
             for (int arm = 0; arm < 6; arm++)
             {
                 float angle = arm * 60 * 0.0174533f;
                 Vector2 armEnd = new Vector2(x + (float)Math.Cos(angle) * crystalSize, y + (float)Math.Sin(angle) * crystalSize);
                 ds.DrawLine(new Vector2(x, y), armEnd, Colors.Cyan, 2f);
-
-                // Branch
                 Vector2 branch = armEnd + new Vector2((float)Math.Cos(angle + 0.5f) * crystalSize * 0.5f, (float)Math.Sin(angle + 0.5f) * crystalSize * 0.5f);
                 ds.DrawLine(armEnd, branch, Colors.LightBlue, 1f);
             }
@@ -2011,13 +1954,11 @@ public partial class AudioEngine
 
     private void DrawThunderstorm(CanvasDrawingSession ds, float w, float h, int count)
     {
-        // Clouds
         for (int i = 0; i < 5; i++)
         {
             ds.FillCircle(w * (0.2f + i * 0.15f), h * 0.2f, 40, Colors.DarkGray);
         }
 
-        // Lightning bolts
         for (int i = 0; i < count; i++)
         {
             if (_visualizerPeaks[i] > 0.6f)
@@ -2044,9 +1985,10 @@ public partial class AudioEngine
     {
         float archHeight = h * 0.5f;
 
-        for (int i = 0; i < 7; i++) // 7 colors of rainbow
+        for (int i = 0; i < 7; i++)
         {
             float thickness = 10 + _visualizerPeaks[i % count] * 20;
+
             using (var pb = new CanvasPathBuilder(ds))
             {
                 pb.BeginFigure(0, h);
@@ -2064,11 +2006,9 @@ public partial class AudioEngine
 
     private void DrawFireworksDisplay(CanvasDrawingSession ds, float w, float h, int count)
     {
-        // Create explosions on beat
         if (_totalVolume > 0.7f && _rng.NextDouble() < 0.1f)
         {
-            _explosions.Add((new Vector2((float)_rng.NextDouble() * w, (float)_rng.NextDouble() * h * 0.5f),
-                             new Vector2(0, 0), 1.0f));
+            _explosions.Add((new Vector2((float)_rng.NextDouble() * w, (float)_rng.NextDouble() * h * 0.5f), new Vector2(0, 0), 1.0f));
         }
 
         for (int i = _explosions.Count - 1; i >= 0; i--)
@@ -2098,7 +2038,6 @@ public partial class AudioEngine
             float x = ((_waveOffset * 200 + i * 7) % w);
             float y = (float)_rng.NextDouble() * h;
             float size = 2 + intensity * (float)_rng.NextDouble();
-
             ds.FillCircle(x, y, size, Color.FromArgb((byte)(intensity * 2), 210, 180, 140));
         }
     }
@@ -2112,7 +2051,6 @@ public partial class AudioEngine
             float y = i * (h / count);
             float radius = 20 + _visualizerPeaks[i] * 100;
             radius *= (1 - (y / h));
-
             ds.DrawEllipse(center.X, y, radius, 10, Colors.Gray, 2f);
         }
 
@@ -2131,7 +2069,6 @@ public partial class AudioEngine
     private void DrawBioluminescentBay(CanvasDrawingSession ds, float w, float h, int count)
     {
         // Dark background assumed
-
         for (int i = 0; i < count * 2; i++)
         {
             float x = (float)_rng.NextDouble() * w;
@@ -2187,7 +2124,6 @@ public partial class AudioEngine
 
             // Shadow representing phase
             ds.FillRectangle(x - 30 + (phase * 60), y - 30, 60 - (phase * 60), 60, Colors.Black);
-
             ds.DrawText($"{(phase * 100):F0}%", x - 15, y + 40, Colors.White);
         }
     }
@@ -2300,8 +2236,6 @@ public partial class AudioEngine
     private void DrawHologramProjector(CanvasDrawingSession ds, float w, float h, int count)
     {
         Vector2 projectorBase = new Vector2(w / 2, h * 0.8f);
-
-        // Projector
         ds.FillRoundedRectangle(projectorBase.X - 40, projectorBase.Y - 20, 80, 40, 10, 10, Colors.DarkGray);
         ds.FillCircle(projectorBase.X, projectorBase.Y - 20, 20, Colors.Gray);
 
@@ -2361,8 +2295,6 @@ public partial class AudioEngine
                 Rect panel = new Rect(x * panelW + 5, y * panelH + 5, panelW - 10, panelH - 10);
                 ds.FillRectangle(panel, Color.FromArgb((byte)(efficiency * 255), 0, 100, 200));
                 ds.DrawRectangle(panel, Colors.White, 1f);
-
-                // Grid lines on panel
                 ds.DrawLine((float)(panel.Left + panelW / 3), (float)(panel.Top), (float)(panel.Left + panelW / 3), (float)panel.Bottom, Colors.White, 1f);
                 ds.DrawLine((float)(panel.Left + panelW * 2 / 3), (float)panel.Top, (float)(panel.Left + panelW * 2 / 3), (float)panel.Bottom, Colors.White, 1f);
             }
@@ -2374,10 +2306,8 @@ public partial class AudioEngine
         Vector2 towerBase = new Vector2(w / 2, h);
         Vector2 hub = new Vector2(w / 2, h * 0.3f);
 
-        // Tower
         ds.DrawLine(towerBase, hub, Colors.Silver, 8f);
 
-        // Blades
         for (int i = 0; i < 3; i++)
         {
             float angle = _rotationAngle * 2 + i * 120 * 0.0174533f;
@@ -2392,10 +2322,8 @@ public partial class AudioEngine
 
     private void DrawDamWaterfall(CanvasDrawingSession ds, float w, float h, int count)
     {
-        // Dam wall
         ds.FillRectangle(0, h * 0.3f, w, h * 0.2f, Colors.DarkGray);
 
-        // Water flow
         float flowRate = _totalVolume * 2;
         for (int i = 0; i < count; i++)
         {
@@ -2409,7 +2337,6 @@ public partial class AudioEngine
             }
         }
 
-        // Splash at bottom
         for (int i = 0; i < 20; i++)
         {
             float splashY = h - (float)_rng.NextDouble() * 20;

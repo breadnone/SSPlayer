@@ -27,9 +27,7 @@ public class RadioStation
     public int Bitrate { get; set; }
     public string FaviconUrl { get; set; } = string.Empty;
     public string StationUuid { get; set; } = string.Empty;
-
     public bool IsResolved { get; set; }
-
     public string Subtitle =>
         string.Join("  •  ", new[]
         {
@@ -41,8 +39,6 @@ public class RadioStation
 
 public sealed partial class MainWindow
 {
-    // ── Fields ──────────────────────────────────────────────────────────
-
     private Border _radioPanelHost;
     private readonly ObservableCollection<RadioStation> _radioCollection = new();
     private ListView _radioListView;
@@ -54,7 +50,7 @@ public sealed partial class MainWindow
     private StackPanel _radioTagBar;
     private string _activeTagFilter = string.Empty;
     private List<RadioStation> _allStations = new();
-    private ComboBox _radioSourceCombo; // Added for server selection
+    private ComboBox _radioSourceCombo;
 
     private static readonly HttpClient _http = new HttpClient
     {
@@ -67,9 +63,6 @@ public sealed partial class MainWindow
             "nl1.api.radio-browser.info",
             "at1.api.radio-browser.info",
     };
-
-
-
     public void ShowInternetRadioPanel()
     {
         BuildRadioPanel();
@@ -77,7 +70,6 @@ public sealed partial class MainWindow
         if (_allStations.Count == 0)
             _ = LoadRadioStationsAsync(_activeTagFilter);
     }
-
     private void BuildRadioPanel()
     {
         radioPanel.Children.Clear();
@@ -188,21 +180,22 @@ public sealed partial class MainWindow
         _radioListView.DoubleTapped += async (s, e) =>
         {
             e.Handled = true;
+
             if (_radioListView.SelectedItem is RadioStation st)
                 await PlayRadioStation(st);
         };
         _radioListView.RightTapped += (s, e) =>
         {
             if ((e.OriginalSource as FrameworkElement)?.DataContext is RadioStation st)
-                BuildRadioContextMenu(st).ShowAt(
-                    (FrameworkElement)e.OriginalSource,
-                    e.GetPosition((FrameworkElement)e.OriginalSource));
+                BuildRadioContextMenu(st).ShowAt((FrameworkElement)e.OriginalSource, e.GetPosition((FrameworkElement)e.OriginalSource));
         };
+
         Grid.SetRow(_radioListView, 3);
         panel.Children.Add(_radioListView);
 
         _radioStatusText = new TextBlock
         {
+            UseSystemFocusVisuals = true,
             Text = "Select a station to start streaming",
             FontSize = 11,
             Foreground = new SolidColorBrush(ColorHelper.FromArgb(160, 255, 255, 255)),
@@ -244,23 +237,21 @@ public sealed partial class MainWindow
         _http.DefaultRequestHeaders.Remove("User-Agent");
         _http.DefaultRequestHeaders.Add("User-Agent", "SSPlayer/1.0 (WinUI3 Media Player)");
 
-        // 1. Radio Browser
         if (selectedSource == "All Servers" || selectedSource == "Radio Browser")
         {
-            string tagParam = string.IsNullOrWhiteSpace(tag) || tag.Equals("All", StringComparison.OrdinalIgnoreCase)
-                ? string.Empty
-                : $"&tag={Uri.EscapeDataString(tag.ToLower())}";
-
+            string tagParam = string.IsNullOrWhiteSpace(tag) || tag.Equals("All", StringComparison.OrdinalIgnoreCase) ? string.Empty : $"&tag={Uri.EscapeDataString(tag.ToLower())}";
             string path = $"/json/stations/search?limit=2000&order=votes&reverse=true&hidebroken=true{tagParam}";
 
             foreach (var host in ApiHosts)
             {
                 if (token.IsCancellationRequested) break;
+
                 try
                 {
                     string url = $"https://{host}{path}";
                     var json = await _http.GetStringAsync(url, token);
                     var rbStations = ParseStationsJson(json);
+
                     if (rbStations?.Count > 0)
                     {
                         fetched.AddRange(rbStations);
@@ -271,7 +262,6 @@ public sealed partial class MainWindow
             }
         }
 
-        // 2. SomaFM
         if (!token.IsCancellationRequested && (selectedSource == "All Servers" || selectedSource == "SomaFM"))
         {
             try
@@ -285,7 +275,6 @@ public sealed partial class MainWindow
             catch { }
         }
 
-        // 3. TuneIn (RadioTime Community Search)
         if (!token.IsCancellationRequested && (selectedSource == "All Servers" || selectedSource == "TuneIn"))
         {
             try
@@ -319,6 +308,7 @@ public sealed partial class MainWindow
             foreach (var el in doc.RootElement.EnumerateArray())
             {
                 string url = el.TryGetProperty("url_resolved", out var ur) ? ur.GetString() : null;
+
                 if (string.IsNullOrWhiteSpace(url))
                     url = el.TryGetProperty("url", out var u) ? u.GetString() : null;
 
@@ -403,9 +393,7 @@ public sealed partial class MainWindow
         catch (Exception ex) { Log.Print($"TuneIn JSON error: {ex.Message}"); }
         return list;
     }
-    // Add this field to InternetRadio.cs partial class
     private MediaPlayer _radioPlayer;
-    // Make _radioPlayer accessible to the main control methods
     public MediaPlayer RadioPlayer => _radioPlayer;
     public bool IsRadioPlaying => _radioPlayer?.CurrentState == MediaPlayerState.Playing;
     private async Task PlayRadioStation(RadioStation station)
@@ -415,11 +403,8 @@ public sealed partial class MainWindow
         try
         {
             SetRadioLoading(true, $"Connecting to {station.Name}…");
-
-            // Stop the main player — don't touch its AudioGraph wiring
             MainWindow.main.PauseMedia(PlayerPlayState.Stop);
 
-            // Dispose previous radio player cleanly
             if (_radioPlayer != null)
             {
                 _radioPlayer.Pause();
@@ -428,13 +413,11 @@ public sealed partial class MainWindow
                 _radioPlayer = null;
             }
 
-            // Fresh MediaPlayer — completely outside the AudioGraph pipeline
             _radioPlayer = new MediaPlayer
             {
                 RealTimePlayback = true,
                 IsMuted = false,
-                Volume = _currentSettings.Volume / 100.0,
-                // No TimelineController — radio plays on its own clock
+                Volume = _currentSettings.Volume / 100.0
             };
 
             var uri = new Uri(station.StreamUrl);
@@ -443,8 +426,6 @@ public sealed partial class MainWindow
 
             _radioPlayer.Source = playbackItem;
             _radioPlayer.Play();
-
-            // Tell the UI we're in radio mode (disables seek bar, etc.)
             SwitchToRadioMode();
 
             _currentStation = station;
@@ -516,15 +497,15 @@ public sealed partial class MainWindow
     private Button MakeTagPill(string tag)
     {
         bool isAll = tag.Equals("All", StringComparison.OrdinalIgnoreCase);
+
         var btn = new Button
         {
+            UseLayoutRounding = true,
             Content = tag,
             FontSize = 10,
             Padding = new Thickness(10, 3, 10, 3),
             CornerRadius = new CornerRadius(10),
-            Background = new SolidColorBrush(isAll
-                ? ColorHelper.FromArgb(120, 100, 180, 255)
-                : ColorHelper.FromArgb(60, 255, 255, 255)),
+            Background = new SolidColorBrush(isAll ? ColorHelper.FromArgb(120, 100, 180, 255) : ColorHelper.FromArgb(60, 255, 255, 255)),
             Foreground = new SolidColorBrush(Colors.White),
             BorderThickness = new Thickness(0),
             Margin = new Thickness(0)
@@ -533,12 +514,11 @@ public sealed partial class MainWindow
         btn.Click += async (s, e) =>
         {
             _activeTagFilter = isAll ? string.Empty : tag;
+
             foreach (var child in _radioTagBar.Children.OfType<Button>())
             {
                 bool active = child.Content?.ToString() == tag;
-                child.Background = new SolidColorBrush(active
-                    ? ColorHelper.FromArgb(120, 100, 180, 255)
-                    : ColorHelper.FromArgb(60, 255, 255, 255));
+                child.Background = new SolidColorBrush(active ? ColorHelper.FromArgb(120, 100, 180, 255) : ColorHelper.FromArgb(60, 255, 255, 255));
             }
 
             if (isAll || _allStations.Count > 0)
@@ -560,46 +540,46 @@ public sealed partial class MainWindow
     private DataTemplate BuildRadioItemTemplate()
     {
         const string xaml = @"
-<DataTemplate xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"">
-  <Grid Padding=""10,8"" Background=""Transparent"">
-    <Grid.ColumnDefinitions>
-      <ColumnDefinition Width=""36""/>
-      <ColumnDefinition Width=""*""/>
-      <ColumnDefinition Width=""Auto""/>
-    </Grid.ColumnDefinitions>
-    <Border Grid.Column=""0"" Width=""32"" Height=""32"" CornerRadius=""6""
-            Background=""#1AFFFFFF"" VerticalAlignment=""Center"">
-      <TextBlock Text=""&#x1F4FB;"" FontSize=""16""
-                 HorizontalAlignment=""Center"" VerticalAlignment=""Center""/>
-    </Border>
-    <StackPanel Grid.Column=""1"" VerticalAlignment=""Center"" Margin=""8,0,8,0"">
-      <TextBlock Text=""{Binding Name}"" Foreground=""White"" FontSize=""12""
-                 TextTrimming=""CharacterEllipsis"" FontWeight=""SemiBold""/>
-      <TextBlock Text=""{Binding Subtitle}"" Foreground=""White"" FontSize=""10""
-                 Opacity=""0.55"" TextTrimming=""CharacterEllipsis""/>
-    </StackPanel>
-    <Border Grid.Column=""2"" CornerRadius=""3"" Padding=""4,1""
-            Background=""#20FFFFFF"" VerticalAlignment=""Center"">
-      <TextBlock Text=""{Binding Codec}"" FontSize=""9"" Foreground=""White"" Opacity=""0.6""/>
-    </Border>
-  </Grid>
-</DataTemplate>";
+        <DataTemplate xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"">
+          <Grid Padding=""10,8"" Background=""Transparent"">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width=""36""/>
+              <ColumnDefinition Width=""*""/>
+              <ColumnDefinition Width=""Auto""/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column=""0"" Width=""32"" Height=""32"" CornerRadius=""6""
+                    Background=""#1AFFFFFF"" VerticalAlignment=""Center"">
+              <TextBlock Text=""&#x1F4FB;"" FontSize=""16""
+                         HorizontalAlignment=""Center"" VerticalAlignment=""Center""/>
+            </Border>
+            <StackPanel Grid.Column=""1"" VerticalAlignment=""Center"" Margin=""8,0,8,0"">
+              <TextBlock Text=""{Binding Name}"" Foreground=""White"" FontSize=""12""
+                         TextTrimming=""CharacterEllipsis"" FontWeight=""SemiBold""/>
+              <TextBlock Text=""{Binding Subtitle}"" Foreground=""White"" FontSize=""10""
+                         Opacity=""0.55"" TextTrimming=""CharacterEllipsis""/>
+            </StackPanel>
+            <Border Grid.Column=""2"" CornerRadius=""3"" Padding=""4,1""
+                    Background=""#20FFFFFF"" VerticalAlignment=""Center"">
+              <TextBlock Text=""{Binding Codec}"" FontSize=""9"" Foreground=""White"" Opacity=""0.6""/>
+            </Border>
+          </Grid>
+        </DataTemplate>";
         return (DataTemplate)Microsoft.UI.Xaml.Markup.XamlReader.Load(xaml);
     }
 
     private MenuFlyout BuildRadioContextMenu(RadioStation station)
     {
         var menu = new MenuFlyout();
-        var playItem = new MenuFlyoutItem { Text = "▶  Play", Icon = new SymbolIcon(Symbol.Play) };
+        var playItem = new MenuFlyoutItem { UseLayoutRounding = true, Text = "▶  Play", Icon = new SymbolIcon(Symbol.Play) };
         playItem.Click += async (s, e) => await PlayRadioStation(station);
         menu.Items.Add(playItem);
 
-        var addItem = new MenuFlyoutItem { Text = "Add to Playlist", Icon = new SymbolIcon(Symbol.Add) };
+        var addItem = new MenuFlyoutItem { UseLayoutRounding = true, Text = "Add to Playlist", Icon = new SymbolIcon(Symbol.Add) };
         addItem.Click += (s, e) => AddRadioToPlaylist(station);
         menu.Items.Add(addItem);
 
-        menu.Items.Add(new MenuFlyoutSeparator());
-        var copyUrl = new MenuFlyoutItem { Text = "Copy Stream URL", Icon = new SymbolIcon(Symbol.Copy) };
+        menu.Items.Add(new MenuFlyoutSeparator { UseLayoutRounding = true });
+        var copyUrl = new MenuFlyoutItem { UseLayoutRounding = true, Text = "Copy Stream URL", Icon = new SymbolIcon(Symbol.Copy) };
         copyUrl.Click += (s, e) =>
         {
             var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
@@ -614,7 +594,9 @@ public sealed partial class MainWindow
     {
         DispatcherQueue.TryEnqueue(() =>
         {
-            if (_radioLoadRing != null) _radioLoadRing.IsActive = loading;
+            if (_radioLoadRing != null)
+                _radioLoadRing.IsActive = loading;
+
             if (_radioStatusText != null && !string.IsNullOrEmpty(message))
                 _radioStatusText.Text = message;
         });
@@ -624,6 +606,7 @@ public sealed partial class MainWindow
     {
         var btn = new Button
         {
+            UseLayoutRounding = true,
             Content = new FontIcon { Glyph = glyph, FontSize = 13, Foreground = new SolidColorBrush(Colors.White) },
             Width = 32,
             Height = 32,
@@ -633,6 +616,7 @@ public sealed partial class MainWindow
             CornerRadius = new CornerRadius(4),
             VerticalAlignment = VerticalAlignment.Center
         };
+
         ToolTipService.SetToolTip(btn, tooltip);
         return btn;
     }

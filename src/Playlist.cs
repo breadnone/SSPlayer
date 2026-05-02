@@ -179,6 +179,7 @@ public sealed partial class MainWindow
 
         RefreshPlaylistUI();
     }
+
     private void HidePlaylist()
     {
         if (IsPointerInPlaylistOverlay) return;
@@ -191,6 +192,7 @@ public sealed partial class MainWindow
         _playlistPanel.Opacity = 0;
         _controlOverlay.Visibility = Visibility.Visible;
     }
+
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(PlaylistItem))]
     private async Task AddToPlaylist(StorageFile file, TimeSpan knownDuration = default, bool clearPlayList = false)
     {

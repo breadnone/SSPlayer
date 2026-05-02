@@ -25,7 +25,6 @@ public class WindowCaptureManager : IDisposable
     private readonly object _frameLock = new object();
     private Windows.Graphics.SizeInt32 _lastSize;
     public CaptureViewWindow window { get; private set; }
-    private const float AspectRatio = 16f / 9f;
     public bool IsCapturing { get; private set; }
     /// <summary>
     /// Opens the System Picker to select a window and starts the capture.
@@ -84,27 +83,12 @@ public class WindowCaptureManager : IDisposable
     }
     public static void MoveToDisplay(Window window, int displayIndex)
     {
-        // 1. Get the AppWindow for your Window instance
         var appWindow = window.AppWindow;
-
-        // 2. Get all available display areas
         var displayAreas = DisplayArea.FindAll();
-
-        // Safety check: ensure the index exists
         if (displayIndex < 0 || displayIndex >= displayAreas.Count) return;
 
-        // 3. Get the target display's bounds (WorkArea is better than OuterBounds 
-        // because it accounts for the Taskbar)
         RectInt32 workArea = displayAreas[displayIndex].WorkArea;
-
-        // 4. Move the window to the top-left of that display
-        // You can also adjust width/height here if you want it fullscreened
-        appWindow.MoveAndResize(new RectInt32(
-            workArea.X,
-            workArea.Y,
-            appWindow.Size.Width,
-            appWindow.Size.Height
-        ));
+        appWindow.MoveAndResize(new RectInt32(workArea.X, workArea.Y, appWindow.Size.Width, appWindow.Size.Height));
     }
     private void ApplyExtendedCaptureProperties(GraphicsCaptureSession session)
     {
@@ -178,29 +162,16 @@ public class WindowCaptureManager : IDisposable
         {
             var size = frame.ContentSize;
 
-            // 1. Guard against invalid dimensions during transition
             if (size.Width <= 0 || size.Height <= 0) return;
 
-            // 2. Handle the Resize/Maximize jump
             if (size.Width != _lastSize.Width || size.Height != _lastSize.Height)
             {
                 _lastSize = size;
-
-                // Recreate the pool for the new size
-                sender.Recreate(
-                    _canvasDevice,
-                    DirectXPixelFormat.B8G8R8A8UIntNormalized,
-                    2,
-                    _lastSize);
-
-                // CRITICAL: Return immediately. The current 'frame.Surface' 
-                // is technically part of the old pool state.
+                sender.Recreate(_canvasDevice, DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, _lastSize);
                 frame.Dispose();
                 return;
             }
 
-            // 3. Thread-safe Bitmap Creation
-            // We use a local variable to ensure we don't hold the lock longer than needed
             CanvasBitmap bitmap = CanvasBitmap.CreateFromDirect3D11Surface(_canvasDevice, frame.Surface);
 
             lock (_frameLock)
@@ -211,29 +182,17 @@ public class WindowCaptureManager : IDisposable
         }
         catch (Exception ex)
         {
-            // Catch DXGI_ERROR_DEVICE_REMOVED or ObjectDisposedException
             Debug.WriteLine($"Capture Error: {ex.Message}");
         }
     }
     private void HandleDeviceLost()
     {
         Debug.WriteLine("Device lost detected. Re-initializing engine...");
-
-        // 1. Clean up the old broken mess
         StopCapture();
-
-        // 2. Get a fresh device
         _canvasDevice = CanvasDevice.GetSharedDevice();
-
-        // 3. Restart the capture session with the NEW device
-        // You'll need to re-run your setup logic here
         _ = StartPickerCaptureAsync(null, _canvasDevice);
     }
     private void OnCaptureItemClosed(GraphicsCaptureItem sender, object args) => StopCapture();
-    private IntPtr WindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, IntPtr uIdSubclass, IntPtr dwRefData)
-    {
-        return HandleSizingMessage(hWnd, uMsg, wParam, lParam);
-    }
     public void ToggleFullscreen()
     {
         if (window == null) return;
@@ -249,8 +208,7 @@ public class WindowCaptureManager : IDisposable
             appWin.SetPresenter(AppWindowPresenterKind.FullScreen);
         }
     }
-    private int _resizingState = 0; // 0 = idle, 1 = resizing
-
+    private int _resizingState = 0;
     public IntPtr HandleSizingMessage(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam)
     {
         const uint WM_LBUTTONDBLCLK = 0x0203;
@@ -258,7 +216,6 @@ public class WindowCaptureManager : IDisposable
         const uint WM_EXITSIZEMOVE = 0x0232;
         const uint WM_SIZING = 0x0214;
 
-        // --- NEW: Double Click Toggle ---
         if (uMsg == WM_LBUTTONDBLCLK)
         {
             var appWin = window.AppWindow;
@@ -269,7 +226,6 @@ public class WindowCaptureManager : IDisposable
             return IntPtr.Zero;
         }
 
-        // --- NEW: Memory Barrier for Thread Safety ---
         if (uMsg == WM_ENTERSIZEMOVE)
         {
             Interlocked.Exchange(ref _resizingState, 1);
@@ -279,7 +235,6 @@ public class WindowCaptureManager : IDisposable
             Interlocked.Exchange(ref _resizingState, 0);
             ForcePoolRecreation();
         }
-        // --- YOUR ORIGINAL ASPECT RATIO LOGIC (UNTOUCHED) ---
         else if (uMsg == WM_SIZING)
         {
             Win32.RECT rect = Marshal.PtrToStructure<Win32.RECT>(lParam);
@@ -291,11 +246,11 @@ public class WindowCaptureManager : IDisposable
             if (width < 160 || height < 90) return Win32.DefSubclassProc(hWnd, uMsg, wParam, lParam);
 
             int edge = wParam.ToInt32();
-            if (edge == 1 || edge == 2) // WMSZ_LEFT or WMSZ_RIGHT
+            if (edge == 1 || edge == 2)
             {
                 rect.Bottom = rect.Top + (int)(width / ratio);
             }
-            else if (edge == 3 || edge == 6) // WMSZ_TOP or WMSZ_BOTTOM
+            else if (edge == 3 || edge == 6)
             {
                 rect.Right = rect.Left + (int)(height * ratio);
             }
@@ -309,8 +264,8 @@ public class WindowCaptureManager : IDisposable
     {
         if (_captureItem != null && _framePool != null)
         {
-            // Re-read the actual size from the capture item
             var finalSize = _captureItem.Size;
+
             if (finalSize.Width > 0 && finalSize.Height > 0)
             {
                 _lastSize = finalSize;
@@ -329,13 +284,11 @@ public class WindowCaptureManager : IDisposable
         StopCapture();
     }
 }
-
 public class CaptureViewWindow : Window
 {
     private CanvasAnimatedControl _canvas;
     private WindowCaptureManager _manager;
     private IntPtr _hwnd = IntPtr.Zero;
-    private const float AspectRatio = 16f / 9f;
     private Win32.SUBCLASSPROC _subclassProc;
     public readonly string WindowTitle = "SSPlayer-mirror";
     public IntPtr HWND => _hwnd;
@@ -362,6 +315,7 @@ public class CaptureViewWindow : Window
             _canvas = null;
             _manager.Dispose();
         };
+
         _canvas.DoubleTapped += (s, e) =>
         {
             var appWin = AppWindow;
@@ -376,15 +330,15 @@ public class CaptureViewWindow : Window
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
                 var menuState = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu);
-                
+
                 if (menuState.HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down))
                 {
                     e.Handled = true;
-                    // Accessing the manager's toggle function
                     _manager.ToggleFullscreen();
                 }
             }
         };
+
         _subclassProc = new Win32.SUBCLASSPROC(WindowProc);
     }
     private void OnWindowActivated(object sender, WindowActivatedEventArgs args)
@@ -399,19 +353,14 @@ public class CaptureViewWindow : Window
         }
     }
 
-    private IntPtr WindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam,
-                          IntPtr uIdSubclass, IntPtr dwRefData)
+    private IntPtr WindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, IntPtr uIdSubclass, IntPtr dwRefData)
     {
         return _manager.HandleSizingMessage(hWnd, uMsg, wParam, lParam);
     }
     private void OnDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
     {
         if (_manager == null || !_manager.IsCapturing) return;
-
-        // Use the actual current control size
         var destRect = new Rect(0, 0, sender.Size.Width, sender.Size.Height);
-
-        // Pass the drawing session to the manager
         _manager.DrawLatestFrame(args.DrawingSession, destRect);
     }
 

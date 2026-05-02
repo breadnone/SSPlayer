@@ -89,13 +89,13 @@ public sealed partial class MainWindow : Window
     private CancellationTokenSource clickTokenSource;
     private Storyboard _nowPlayingStoryboard;
     private bool _isResizing = false;
-    private int _resizeHitTest = 0;          // HTTOP, HTLEFT, etc.
-    private const int RESIZE_BORDER_THICKNESS = 8;  // pixels (adjust as needed)
+    private int _resizeHitTest = 0;
+    private const int RESIZE_BORDER_THICKNESS = 8;
     private Image _animatedImageHost;
     private bool _isDraggingWindow = false;
-    private Point _dragStartMousePos;      // Relative to the window content (in DIPs)
-    private Point _dragStartWindowPos;      // Screen position of the window (in DIPs
-    private Point _dragStartMouseScreenPos;   // screen coordinates
+    private Point _dragStartMousePos;
+    private Point _dragStartWindowPos;
+    private Point _dragStartMouseScreenPos;
     private Border _infoOverlay;
     private PointerEventHandler _borderlessPressedHandler;
     private PointerEventHandler _borderlessMovedHandler;
@@ -149,27 +149,27 @@ public sealed partial class MainWindow : Window
     private readonly HashSet<string> AudioExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".mp3",
-        ".m4a",   // MPEG-4 Audio (AAC/ALAC)
-        ".aac",   // Advanced Audio Coding
-        ".adts",  // Audio Data Transport Stream
-        ".wma",   // Windows Media Audio
-        ".wav",   // Waveform Audio
+        ".m4a",  
+        ".aac",  
+        ".adts",  
+        ".wma",   
+        ".wav",  
         ".wave",
-        ".flac",  // Native support added in Windows 10
-        ".alac",  // Apple Lossless (via M4A container)
-        ".ogg",   // Ogg Container
-        ".oga",   // Ogg Audio
-        ".opus",  // Opus Codec
-        ".aif",   // Audio Interchange File Format
+        ".flac",  
+        ".alac", 
+        ".ogg",  
+        ".oga",  
+        ".opus", 
+        ".aif",   
         ".aiff",
         ".aifc",
-        ".au",    // Sun Microsystems/Next
+        ".au",   
         ".snd",
-        ".mp2",   // MPEG Layer II
-        ".mka",   // Matroska Audio
-        ".amr",   // Adaptive Multi-Rate
-        ".3gp",   // 3GPP container audio
-        ".3g2"    // 3GPP2 container audio
+        ".mp2",  
+        ".mka",   
+        ".amr",  
+        ".3gp",  
+        ".3g2"  
     };
     private bool IsVideo(StorageFile f) => VideoExtensions.Contains(System.IO.Path.GetExtension(f.Name));
     private bool IsImage(StorageFile f) => ImageExtensions.Contains(System.IO.Path.GetExtension(f.Name));
@@ -189,7 +189,7 @@ public sealed partial class MainWindow : Window
     private ProgressRing _loadingRing;
     private TextBlock _loadingText;
     private int wasDoubleTapped = 0;
-    private int isProcessingClick = 0; // Class-level field
+    private int isProcessingClick = 0;
     private CancellationTokenSource _playPauseOverlayCts;
     private Storyboard _fadeOutStoryboard = new Storyboard();
     public enum PlayerPlayState { Stop = 0, Playing = 1, Paused = 2 }
@@ -304,11 +304,9 @@ public sealed partial class MainWindow : Window
             {
                 var currentPoint = e.GetCurrentPoint(playerContainer).Position;
 
-                // Calculate the distance from start point
                 double deltaX = Math.Abs(currentPoint.X - pconStartPoint.X);
                 double deltaY = Math.Abs(currentPoint.Y - pconStartPoint.Y);
 
-                // Only count as a drag if the movement is significant
                 if (deltaX > DragThreshold || deltaY > DragThreshold)
                 {
                     pconWasDragging = true;
@@ -445,10 +443,8 @@ public sealed partial class MainWindow : Window
             return true;
         };
 
-        // Hook container events once
         AttachItemEvents();
 
-        // Load last used playlist on startup
         _ = LoadLastPlaylistAsync();
 
         ToggleBorderless();
@@ -534,7 +530,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-                       InitializeLongRunningBackgroundWorkerTimer();
+            InitializeLongRunningBackgroundWorkerTimer();
             InitialLoad();
             audioEngine = new AudioEngine();
             Closed += CleanupResources;
@@ -647,8 +643,6 @@ public sealed partial class MainWindow : Window
         };
 
         plHeader.Children.Add(repeatBtn);
-
-        // Playlist Content Container
         Grid plGrid = new Grid { UseLayoutRounding = true };
         plGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         plGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -658,12 +652,10 @@ public sealed partial class MainWindow : Window
         plGrid.Children.Add(plHeader);
         plGrid.Children.Add(_playlistView);
 
-        // --- STRUCTURAL FIX: Outer layout to keep handle visible ---
         Grid playlistLayout = new Grid { UseLayoutRounding = true };
         playlistLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        playlistLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(6) }); // Dedicated resize column
+        playlistLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(6) });
 
-        // Resize handle - Now sibling to the TabView
         var resizeHandle = new Border
         {
             UseLayoutRounding = true,
@@ -750,7 +742,7 @@ public sealed partial class MainWindow : Window
             BorderThickness = new Thickness(0),
             Translation = new System.Numerics.Vector3((float)-PLAYLIST_WIDTH, 0, 0),
             Opacity = 0,
-            Child = playlistLayout // Shell contains TabView + Resize Handle
+            Child = playlistLayout
         };
 
         _playlistPanel.PointerPressed += (s, e) => { e.Handled = true; };
@@ -1318,7 +1310,6 @@ public sealed partial class MainWindow : Window
 
         int finalLength = span.Length + spaceCount;
 
-        // 3. Final Step: Direct buffer manipulation
         return string.Create(finalLength, span, (dest, src) =>
         {
             int writeIdx = 0;
@@ -1336,7 +1327,6 @@ public sealed partial class MainWindow : Window
                     }
                 }
 
-                // Copy char with UpperCase for the first letter
                 if (writeIdx == 0)
                     dest[writeIdx++] = char.ToUpperInvariant(src[i]);
                 else
@@ -1594,7 +1584,6 @@ public sealed partial class MainWindow : Window
             }
             else
             {
-                // Width not ready yet — wait for first layout pass
                 void OnSizeChanged(object sender, SizeChangedEventArgs args)
                 {
                     timelineGrid.SizeChanged -= OnSizeChanged;
@@ -1619,7 +1608,7 @@ public sealed partial class MainWindow : Window
         FlyoutShowOptions options = new FlyoutShowOptions
         {
             Position = new Point(rootSize.Width / 2, rootSize.Height / 2),
-            Placement = FlyoutPlacementMode.Auto, // Auto will center the flyout on the Position point
+            Placement = FlyoutPlacementMode.Auto,
             ShowMode = FlyoutShowMode.Standard
         };
 
@@ -1705,7 +1694,7 @@ public sealed partial class MainWindow : Window
             if (active == start)
             {
                 UpdateMarkerTime(sText, ratio, duration);
-                onStartChanged?.Invoke(ratio); // ← saves to _loopStart
+                onStartChanged?.Invoke(ratio);
 
                 if (PlayState != PlayerPlayState.Paused || PlayState != PlayerPlayState.Stop)
                 {
@@ -1718,7 +1707,7 @@ public sealed partial class MainWindow : Window
             else
             {
                 UpdateMarkerTime(eText, ratio, duration);
-                onEndChanged?.Invoke(ratio);   // ← saves to _loopEnd
+                onEndChanged?.Invoke(ratio);
 
                 if (PlayState != PlayerPlayState.Paused || PlayState != PlayerPlayState.Stop)
                 {
@@ -1774,7 +1763,6 @@ public sealed partial class MainWindow : Window
             Foreground = new SolidColorBrush(Colors.White)
         };
 
-        // Circular or Horizontal Progress (using horizontal for modern sleek look)
         _volumeOverlayBar = new ProgressBar
         {
             UseLayoutRounding = true,
@@ -1949,7 +1937,6 @@ public sealed partial class MainWindow : Window
 
         editMetadataItem.Click += async (s, e) =>
         {
-            // FIX: Use 'item' from the method parameter, not the SelectedItem property
             if (item != null)
             {
                 try
@@ -1962,7 +1949,6 @@ public sealed partial class MainWindow : Window
 
                     if (isSupported)
                     {
-                        // Pass 'editMetadataItem' as the sender so it knows where to anchor
                         ShowMetadataDialog(editMetadataItem, e, file);
                     }
                 }
@@ -1999,12 +1985,10 @@ public sealed partial class MainWindow : Window
     }
     private async void ShowMetadataDialog(object sender, RoutedEventArgs e, StorageFile file)
     {
-        // 1. Get the actual UI element that was clicked
         if (e.OriginalSource is FrameworkElement anchor)
         {
             try
             {
-                // 2. Resolve the file from context if needed
                 StorageFile targetFile = file;
                 if (targetFile == null && anchor.DataContext is PlaylistItem item)
                 {
@@ -2013,7 +1997,6 @@ public sealed partial class MainWindow : Window
 
                 if (targetFile == null) return;
 
-                // 3. Create the flyout
                 var flyout = MetadataEditor.CreateFlyout(_playlistPanel, targetFile, () =>
                 {
                     if (anchor.DataContext is PlaylistItem pi) pi.Title = pi.Title;
@@ -2057,8 +2040,8 @@ public sealed partial class MainWindow : Window
             if (_lastSeekedPosition != TimeSpan.MinValue)
             {
                 double drift = Math.Abs((session.Position - _lastSeekedPosition).TotalSeconds);
-                if (drift > 0.5) return; // still settling — don't overwrite slider
-                else _lastSeekedPosition = TimeSpan.MinValue; // close enough, resume normal updates
+                if (drift > 0.5) return;
+                else _lastSeekedPosition = TimeSpan.MinValue;
             }
 
             _progressSlider.Value = (session.Position.TotalSeconds / session.NaturalDuration.TotalSeconds) * 100;
@@ -2084,11 +2067,8 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // ─── Playlist item container loaded (hook right-click + set display name) ──
-
     private void AttachItemEvents()
     {
-        // Guard: only register once
         _playlistView.ContainerContentChanging -= OnContainerContentChanging;
         _playlistView.ContainerContentChanging += OnContainerContentChanging;
     }
@@ -2123,16 +2103,12 @@ public sealed partial class MainWindow : Window
             ? (session?.Position.ToString(@"hh\:mm\:ss").TrimStart('0').TrimStart(':') ?? "")
             : "";
 
-        // Column 0 — play indicator
         if (root.Children[0] is TextBlock ind)
         {
             ind.Text = isActive ? (isPlaying ? "▶" : "◼") : "";
-            ind.Foreground = isPlaying
-                ? new SolidColorBrush(ColorHelper.FromArgb(255, 0, 153, 255))
-                : new SolidColorBrush(ColorHelper.FromArgb(160, 255, 255, 255));
+            ind.Foreground = isPlaying ? new SolidColorBrush(ColorHelper.FromArgb(255, 0, 153, 255)) : new SolidColorBrush(ColorHelper.FromArgb(160, 255, 255, 255));
         }
 
-        // Column 1 — thumbnail or music icon
         if (root.Children[1] is Border thumbBorder)
         {
             if (thumbBorder.Child is Grid thumbGrid)
@@ -2146,7 +2122,7 @@ public sealed partial class MainWindow : Window
                 if (isAudio)
                 {
                     if (thumbImage != null) thumbImage.Source = null;
-                    if (musicIcon != null) musicIcon.Text = "\uE8D6"; // Music note icon
+                    if (musicIcon != null) musicIcon.Text = "\uE8D6";
                 }
                 else
                 {
@@ -2160,7 +2136,6 @@ public sealed partial class MainWindow : Window
                         else
                         {
                             thumbImage.Source = null;
-                            // Tag the image with the item path so we don't double-load on recycle
                             if (thumbImage.Tag as string != item.Path)
                             {
                                 thumbImage.Tag = item.Path;
@@ -2180,26 +2155,20 @@ public sealed partial class MainWindow : Window
             }
         }
 
-        // Column 2 — title + status
         if (root.Children[2] is StackPanel sp)
         {
             if (sp.Children[0] is TextBlock titleTb)
             {
                 titleTb.Text = System.IO.Path.GetFileNameWithoutExtension(item.Title);
-                titleTb.Foreground = isActive
-                    ? new SolidColorBrush(ColorHelper.FromArgb(255, 0, 153, 255))
-                    : new SolidColorBrush(Colors.White);
+                titleTb.Foreground = isActive ? new SolidColorBrush(ColorHelper.FromArgb(255, 0, 153, 255)) : new SolidColorBrush(Colors.White);
             }
             if (sp.Children.Count > 1 && sp.Children[1] is TextBlock statusTb)
             {
                 statusTb.Text = isPlaying ? $"▶  {elapsed} / {dur}" : dur;
-                statusTb.Foreground = isPlaying
-                    ? new SolidColorBrush(ColorHelper.FromArgb(255, 0, 153, 255))
-                    : new SolidColorBrush(ColorHelper.FromArgb(160, 255, 255, 255));
+                statusTb.Foreground = isPlaying ? new SolidColorBrush(ColorHelper.FromArgb(255, 0, 153, 255)) : new SolidColorBrush(ColorHelper.FromArgb(160, 255, 255, 255));
             }
         }
 
-        // Column 3 — duration
         if (root.Children[3] is TextBlock durTb)
             durTb.Text = dur;
     }
@@ -2245,14 +2214,12 @@ public sealed partial class MainWindow : Window
     }
     private static unsafe byte[] HBitmapToPng(IntPtr hbm)
     {
-        // Get bitmap dimensions
         var bmi = new BITMAPINFO();
         bmi.bmiHeader.biSize = (uint)Marshal.SizeOf<BITMAPINFOHEADER>();
 
         IntPtr hdc = CreateCompatibleDC(IntPtr.Zero);
         try
         {
-            // Get bitmap info
             GetDIBits(hdc, hbm, 0, 0, Array.Empty<byte>(), ref bmi, 0);
             int w = (int)bmi.bmiHeader.biWidth;
             int h = Math.Abs(bmi.bmiHeader.biHeight);
@@ -2260,8 +2227,8 @@ public sealed partial class MainWindow : Window
 
             // Read pixels as 32-bit BGRA
             bmi.bmiHeader.biBitCount = 32;
-            bmi.bmiHeader.biCompression = 0; // BI_RGB
-            bmi.bmiHeader.biHeight = -h;     // top-down
+            bmi.bmiHeader.biCompression = 0;
+            bmi.bmiHeader.biHeight = -h;
             int stride = w * 4;
             byte[] pixels = new byte[stride * h];
 
@@ -2278,10 +2245,10 @@ public sealed partial class MainWindow : Window
         var rgba = new byte[bgra.Length];
         for (int i = 0; i < bgra.Length; i += 4)
         {
-            rgba[i] = bgra[i + 2]; // R
-            rgba[i + 1] = bgra[i + 1]; // G
-            rgba[i + 2] = bgra[i];     // B
-            rgba[i + 3] = bgra[i + 3]; // A
+            rgba[i] = bgra[i + 2];
+            rgba[i + 1] = bgra[i + 1];
+            rgba[i + 2] = bgra[i];
+            rgba[i + 3] = bgra[i + 3];
         }
 
         using var ms = new MemoryStream();
@@ -2298,11 +2265,10 @@ public sealed partial class MainWindow : Window
             ms.Write(BitConverter.GetBytes(System.Net.IPAddress.HostToNetworkOrder((int)crc)));
         }
 
-        // IHDR
         var ihdr = new byte[13];
         void WriteInt(byte[] b, int off, int v) { var n = BitConverter.GetBytes(System.Net.IPAddress.HostToNetworkOrder(v)); Array.Copy(n, 0, b, off, 4); }
         WriteInt(ihdr, 0, w); WriteInt(ihdr, 4, h);
-        ihdr[8] = 8; ihdr[9] = 2; // 8-bit RGB (drop alpha for simplicity)
+        ihdr[8] = 8; ihdr[9] = 2;
         WriteChunk("IHDR", ihdr);
 
         using var idat = new MemoryStream();
@@ -2311,7 +2277,7 @@ public sealed partial class MainWindow : Window
         {
             for (int y = 0; y < h; y++)
             {
-                deflate.WriteByte(0); // filter type None
+                deflate.WriteByte(0);
                 for (int x = 0; x < w; x++)
                 {
                     int i = y * stride + x * 4;
@@ -2531,7 +2497,6 @@ public sealed partial class MainWindow : Window
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CanvasObject))]
     private void InitializeTopResizeHandle()
     {
-        // 1. Create a standard Grid - no custom class needed
         var topHandle = new CanvasObject
         {
             Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
@@ -2543,11 +2508,9 @@ public sealed partial class MainWindow : Window
 
         Canvas.SetZIndex(topHandle, 999);
 
-        // Variables for the dragging logic
         bool isDragging = false;
         System.Drawing.Point lastMousePos = new();
 
-        // 2. Attach events directly to the Grid
         topHandle.PointerEntered += (s, e) =>
         {
             topHandle.Cursor = InputSystemCursor.Create(InputSystemCursorShape.SizeNorthSouth);
@@ -2555,7 +2518,7 @@ public sealed partial class MainWindow : Window
 
         topHandle.PointerExited += (s, e) =>
         {
-            topHandle.Cursor = null; // Revert to default
+            topHandle.Cursor = null;
         };
 
         topHandle.PointerPressed += (s, e) =>
@@ -2604,7 +2567,6 @@ public sealed partial class MainWindow : Window
             e.Handled = true;
         };
 
-        // 3. Add to the container with the dispatcher to avoid the layout-pass crash
         DispatcherQueue.TryEnqueue(() =>
         {
             if (playerContainer != null && !playerContainer.Children.Contains(topHandle))
@@ -2619,7 +2581,6 @@ public sealed partial class MainWindow : Window
         const uint WM_SETCURSOR = 0x0020;
         const uint WM_NCHITTEST = 0x0084;
 
-        // Only active in borderless mode (subclassing is always on, presenter check is cheap)
         bool isBorderless = m_AppWindow?.Presenter is OverlappedPresenter op && !op.HasTitleBar;
 
         if (isBorderless && uMsg == WM_NCCALCSIZE && wParam != IntPtr.Zero)
@@ -2627,9 +2588,7 @@ public sealed partial class MainWindow : Window
             GetWindowRect(hWnd, out RECT windowRect);
             IntPtr result = DefSubclassProc(hWnd, uMsg, wParam, lParam);
             var clientRect = Marshal.PtrToStructure<RECT>(lParam);
-            // Leave exactly 1px of NC area at the top — invisible but enough for
-            // Windows to honour HTTOP/HTTOPLEFT/HTTOPRIGHT resize hit-tests.
-            clientRect.Top = windowRect.Top;  // fully collapse top NC strip
+            clientRect.Top = windowRect.Top;
             Marshal.StructureToPtr(clientRect, lParam, false);
             return result;
         }
@@ -2648,9 +2607,6 @@ public sealed partial class MainWindow : Window
             {
                 if (mx <= r.Left + b) return (IntPtr)HTTOPLEFT;
                 if (mx >= r.Right - b) return (IntPtr)HTTOPRIGHT;
-
-                // If it's the top but NOT the corners, return HTCLIENT 
-                // so the CustomResizeGrip (XAML) can take it.
                 return (IntPtr)HTCLIENT;
             }
 
@@ -2661,7 +2617,6 @@ public sealed partial class MainWindow : Window
                 return (IntPtr)HTBOTTOM;
             }
 
-            // Also check sides if you want them to work
             if (mx <= r.Left + b) return (IntPtr)HTLEFT;
             if (mx >= r.Right - b) return (IntPtr)HTRIGHT;
             return defResult;
@@ -2687,7 +2642,7 @@ public sealed partial class MainWindow : Window
             if (cursorId != 0)
             {
                 SetCursor(LoadCursor(IntPtr.Zero, cursorId));
-                return (IntPtr)1; // STOP the glitching/flickering
+                return (IntPtr)1;
             }
         }
 
@@ -2720,9 +2675,6 @@ public sealed partial class MainWindow : Window
                 int cw = (wr.Right - wr.Left) - (cr.Right - cr.Left);
 
                 int edge = (int)wParam;
-
-                // WMSZ_LEFT = 1, WMSZ_RIGHT = 2, WMSZ_TOP = 3, WMSZ_TOPLEFT = 4, 
-                // WMSZ_TOPRIGHT = 5, WMSZ_BOTTOM = 6, WMSZ_BOTTOMLEFT = 7, WMSZ_BOTTOMRIGHT = 8
 
                 switch (edge)
                 {
@@ -2794,13 +2746,12 @@ public sealed partial class MainWindow : Window
 
     private void InitializeOverlayLayer(Grid parent)
     {
-        // 1. Create the main overlay container
         _overlayLayer = new Grid
         {
             UseLayoutRounding = true,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch,
-            Background = new SolidColorBrush(Colors.Transparent), // Transparent but allows hits
+            Background = new SolidColorBrush(Colors.Transparent),
             IsHitTestVisible = true,
             AllowDrop = true
         };
@@ -2990,7 +2941,7 @@ public sealed partial class MainWindow : Window
             visual.CenterPoint = new System.Numerics.Vector3(45f / 2f, 45f / 2f, 0f);
             var pop = visual.Compositor.CreateSpringScalarAnimation();
             pop.InitialValue = 0.82f;
-            pop.FinalValue = 1.18f;  // ← changed
+            pop.FinalValue = 1.18f;
             pop.DampingRatio = 0.25f; pop.Period = TimeSpan.FromMilliseconds(60);
             visual.StartAnimation("Scale.X", pop);
             visual.StartAnimation("Scale.Y", pop);
@@ -3399,10 +3350,9 @@ public sealed partial class MainWindow : Window
         };
 
         Canvas.SetZIndex(emptyText, 500);
-        // WIRE UP THE CLICK HANDLER HERE
+
         emptyText.PointerPressed += (s, e) =>
         {
-            // Check for left click
             if (e.GetCurrentPoint(emptyText).Properties.IsLeftButtonPressed)
             {
                 OnOpenSingleFile(s, e);
@@ -3418,7 +3368,7 @@ public sealed partial class MainWindow : Window
         {
             UseLayoutRounding = true,
             FontFamily = new FontFamily("Segoe Fluent Icons"),
-            FontSize = 64, // Icons usually look better slightly larger
+            FontSize = 64,
             Foreground = new SolidColorBrush(Colors.LightGreen),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
@@ -3510,18 +3460,15 @@ public sealed partial class MainWindow : Window
                 var appWin = viewWindow.window.AppWindow;
                 var workArea = targetDisplay.WorkArea;
 
-                // Apply Windowing Mode
                 switch (modeIdx)
                 {
                     case 0: // Windowed
                         appWin.SetPresenter(AppWindowPresenterKind.Overlapped);
-                        // Standard 720p 16:9 start
                         appWin.MoveAndResize(new RectInt32(workArea.X + 50, workArea.Y + 50, 1280, 720));
                         break;
 
                     case 1: // Fullscreen
                         appWin.SetPresenter(AppWindowPresenterKind.FullScreen);
-                        // Move to the target display before entering fullscreen
                         appWin.Move(new PointInt32(workArea.X, workArea.Y));
                         break;
 
@@ -3604,7 +3551,6 @@ public sealed partial class MainWindow : Window
         }
         catch { }
 
-        // 6. Release GPU atlas resources
         try
         {
             foreach (var atm in _gpuAtlases)
@@ -3674,7 +3620,6 @@ public sealed partial class MainWindow : Window
         var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
         var appWin = AppWindow.GetFromWindowId(windowId);
 
-        // 1. Force Size & Disable Resize
         appWin.Resize(new SizeInt32(500, 500));
 
         if (appWin.Presenter is OverlappedPresenter presenter)
@@ -3683,11 +3628,9 @@ public sealed partial class MainWindow : Window
             presenter.IsMaximizable = false;
         }
 
-        // 2. FORCE DARK MODE TITLE BAR
         var titleBar = appWin.TitleBar;
-        titleBar.ExtendsContentIntoTitleBar = true; // Allows us to color the background
+        titleBar.ExtendsContentIntoTitleBar = true;
 
-        // Set button colors to match a dark theme so they don't disappear
         titleBar.ButtonBackgroundColor = Colors.Transparent;
         titleBar.ButtonForegroundColor = Colors.White;
         titleBar.ButtonHoverBackgroundColor = ColorHelper.FromArgb(50, 255, 255, 255);
@@ -3700,7 +3643,7 @@ public sealed partial class MainWindow : Window
             Background = new SolidColorBrush(ColorHelper.FromArgb(255, 28, 28, 28))
         };
 
-        rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // For custom title bar space
+        rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
         var titleSpacer = new Grid { UseLayoutRounding = true, Height = 32, Background = new SolidColorBrush(Colors.Transparent) };
@@ -3793,7 +3736,7 @@ public sealed partial class MainWindow : Window
             UseLayoutRounding = true,
             Text = "Set As Live Wallpaper",
             Icon = new SymbolIcon(Symbol.Pictures),
-            IsChecked = liveWallpaperIsOn  // ← initialize from current state
+            IsChecked = liveWallpaperIsOn
         };
 
         wallpaperItem.Click += (s, e) =>
@@ -4087,7 +4030,6 @@ public sealed partial class MainWindow : Window
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(DraggableOverlay))]
     public void AddCustomOverlay(FrameworkElement element)
     {
-        // Wrap the element in our helper to ensure all areas are hit-testable and cursors work
         var wrapper = new DraggableOverlay(element)
         {
             UseLayoutRounding = true,
@@ -4099,7 +4041,6 @@ public sealed partial class MainWindow : Window
 
         if (_overlayLayer.Children.Contains(wrapper)) return;
 
-        // --- Context Menu Logic ---
         var menu = new MenuFlyout();
         var loopItem = new MenuFlyoutItem { UseLayoutRounding = true, Text = "Loop", Icon = new SymbolIcon(Symbol.RepeatOne) };
         var deleteItem = new MenuFlyoutItem { UseLayoutRounding = true, Text = "Remove", Icon = new SymbolIcon(Symbol.Delete) };
@@ -4149,19 +4090,17 @@ public sealed partial class MainWindow : Window
         menu.Items.Add(deleteItem);
         wrapper.ContextFlyout = menu;
 
-        // --- 8-Point Interaction Logic ---
         bool isDragging = false;
         bool isResizing = false;
-        bool _t = false, _b = false, _l = false, _r = false; // Active edges
+        bool _t = false, _b = false, _l = false, _r = false; 
 
         Windows.Foundation.Point lastPoint = new Windows.Foundation.Point(0, 0);
-        const double GRIP = 12; // Edge sensitivity
+        const double GRIP = 12;
 
         wrapper.PointerPressed += (s, e) =>
         {
             var pos = e.GetCurrentPoint(wrapper).Position;
 
-            // Detect zones
             _l = pos.X < GRIP;
             _r = pos.X > wrapper.ActualWidth - GRIP;
             _t = pos.Y < GRIP;
@@ -4192,6 +4131,7 @@ public sealed partial class MainWindow : Window
                     double w = Math.Max(50, wrapper.ActualWidth - dx);
                     if (w > 50) { wrapper.Width = w; wrapper.Translation += new System.Numerics.Vector3((float)dx, 0, 0); }
                 }
+
                 if (_r) wrapper.Width = Math.Max(50, wrapper.ActualWidth + dx);
                 if (_t)
                 {
@@ -4205,7 +4145,6 @@ public sealed partial class MainWindow : Window
                 wrapper.Translation += new System.Numerics.Vector3((float)dx, (float)dy, 0);
             }
 
-            // Cursor Logic
             bool hL = pos.X < GRIP; bool hR = pos.X > wrapper.ActualWidth - GRIP;
             bool hT = pos.Y < GRIP; bool hB = pos.Y > wrapper.ActualHeight - GRIP;
 
@@ -4291,7 +4230,6 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            // If overlay is already showing — close it (true toggle)
             if (_infoOverlay != null)
             {
                 _infoUpdateTimer?.Stop();
@@ -4305,18 +4243,13 @@ public sealed partial class MainWindow : Window
                 catch { }
                 _infoOverlay = null;
 
-                // Unhook source change listener
                 if (_player?.MediaPlayer != null)
                     _player.MediaPlayer.SourceChanged -= OnInfoOverlaySourceChanged;
 
                 return;
             }
 
-            // No active source — nothing to show
-            bool hasSource = _player?.MediaPlayer?.Source != null
-                          && _player.MediaPlayer.PlaybackSession != null
-                          && _player.MediaPlayer.PlaybackSession.PlaybackState != MediaPlaybackState.None;
-
+            bool hasSource = _player?.MediaPlayer?.Source != null && _player.MediaPlayer.PlaybackSession != null && _player.MediaPlayer.PlaybackSession.PlaybackState != MediaPlaybackState.None;
             bool isRadio = fileType == FileType.Radio;
 
             if (!hasSource && !isRadio)
@@ -4432,7 +4365,6 @@ public sealed partial class MainWindow : Window
                 container.Children.Add(_infoOverlay);
                 StartInfoUpdateTimer();
 
-                // Hook source changes to rebuild static info
                 if (_player?.MediaPlayer != null)
                 {
                     _player.MediaPlayer.SourceChanged -= OnInfoOverlaySourceChanged;
@@ -4445,14 +4377,12 @@ public sealed partial class MainWindow : Window
 
     private void OnInfoOverlaySourceChanged(MediaPlayer sender, object args)
     {
-        // Fires on background thread — dispatch to UI
         DispatcherQueue.TryEnqueue(() =>
         {
             try
             {
                 if (_infoOverlay == null) return;
 
-                // Tear down and rebuild with new source info
                 _infoUpdateTimer?.Stop();
                 try
                 {

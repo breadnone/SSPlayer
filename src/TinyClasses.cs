@@ -76,7 +76,7 @@ public class AtlasWrapper
     }
 }
 
-[DynamicInterfaceCastableImplementation] // keeps it from being trimmed
+[DynamicInterfaceCastableImplementation]
 [ComImport]
 [Guid("5B0D3235-4DBA-4D44-865E-8F1D0E4FD04D")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
@@ -96,7 +96,6 @@ public class EqualizerSettings
 
 public sealed class CanvasObject : Grid
 {
-    // This ensures the trimmer sees the property even if it thinks the class is unused
     internal static void _KeepAlive() => _ = new CanvasObject().Cursor;
 
     public InputCursor? Cursor { get => ProtectedCursor; set => ProtectedCursor = value; }

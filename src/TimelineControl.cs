@@ -19,14 +19,11 @@ public class TimelineControl : Grid
     public event EventHandler<double> StartRatioChanged;
     public event EventHandler<double> EndRatioChanged;
     public event EventHandler<double> ValueChanged;
-
-    // ── Private state ─────────────────────────────────────────────────────────
     private readonly bool _isDualHandle;
     private readonly Grid _trackArea;
     private readonly Rectangle _trackRange;
     private readonly FrameworkElement _startHandle;
     private readonly FrameworkElement _endHandle;
-
     private TimeSpan _duration;
     private double _startRatio = 0.0;
     private double _endRatio = 1.0;
@@ -34,13 +31,9 @@ public class TimelineControl : Grid
     private double _dragOffsetX;
     private const double PAD = 8.0;
     private const double MIN_GAP = 24.0;
-
-    // ── Unit Logic ────────────────────────────────────────────────────────────
     public double Minimum { get; set; } = 0;
     public double Maximum { get; set; } = 100;
-
     public double Value => Minimum + (_startRatio * (Maximum - Minimum));
-
     public void SetValues(double start, double end = -1)
     {
         if (Maximum <= Minimum) return;
@@ -54,8 +47,6 @@ public class TimelineControl : Grid
 
         Render();
     }
-
-    // ── Constructor ───────────────────────────────────────────────────────────
     public TimelineControl(string title = "", bool isDualHandle = true)
     {
         _isDualHandle = isDualHandle;
@@ -67,8 +58,6 @@ public class TimelineControl : Grid
         timesGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         timesGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
         timesGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-
 
         StartTimeText = new TextBlock
         {
@@ -116,6 +105,7 @@ public class TimelineControl : Grid
 
         var trackBg = new Rectangle
         {
+            UseLayoutRounding = true,
             Height = 4,
             RadiusX = 2,
             RadiusY = 2,
@@ -128,6 +118,7 @@ public class TimelineControl : Grid
 
         _trackRange = new Rectangle
         {
+            UseLayoutRounding = true,
             Height = 4,
             RadiusX = 2,
             RadiusY = 2,
@@ -163,9 +154,9 @@ public class TimelineControl : Grid
 
             _trackArea.Children.Add(_floatingLabel);
         }
+
         Grid.SetRow(_trackArea, 1);
         Children.Add(_trackArea);
-
         Microsoft.UI.Xaml.Hosting.ElementCompositionPreview.SetIsTranslationEnabled(_startHandle, true);
         if (_endHandle != null) Microsoft.UI.Xaml.Hosting.ElementCompositionPreview.SetIsTranslationEnabled(_endHandle, true);
 
@@ -173,7 +164,6 @@ public class TimelineControl : Grid
         _trackArea.PointerMoved += OnPointerMoved;
         _trackArea.PointerReleased += OnPointerReleased;
         _trackArea.PointerCaptureLost += (s, e) => { _active = null; };
-
         SizeChanged += (s, e) => Render();
     }
 
@@ -186,7 +176,6 @@ public class TimelineControl : Grid
     }
 
     public void SetDuration(TimeSpan duration) { _duration = duration; Render(); }
-
     private double TrackWidth => Math.Max(1, _trackArea.ActualWidth - PAD * 2);
     private double RatioToX(double ratio) => PAD + ratio * TrackWidth;
     private double XToRatio(double x) => Math.Clamp((x - PAD) / TrackWidth, 0, 1);
@@ -214,7 +203,6 @@ public class TimelineControl : Grid
         if (!_isDualHandle && _floatingLabel != null)
         {
             UpdateLabel(_floatingLabel, _startRatio);
-
             double labelW = _floatingLabel.ActualWidth > 0 ? _floatingLabel.ActualWidth : 40;
             double clampedLeft = Math.Clamp(sx - labelW / 2, PAD, _trackArea.ActualWidth - PAD - labelW);
             _floatingLabel.Margin = new Thickness(clampedLeft, 0, 0, 0);
@@ -248,6 +236,7 @@ public class TimelineControl : Grid
     private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
     {
         if (_active == null) return;
+
         double pt = e.GetCurrentPoint(_trackArea).Position.X;
         double ratio = XToRatio(pt - _dragOffsetX);
         double minGap = MIN_GAP / TrackWidth;
@@ -280,14 +269,15 @@ public class TimelineControl : Grid
         {
             UseLayoutRounding = true,
             Width = 28,
-            Height = 56,              // ← was 48
+            Height = 56,         
             HorizontalAlignment = HorizontalAlignment.Left,
             Background = new SolidColorBrush(Colors.Transparent),
             Spacing = 3,
-            Padding = new Thickness(0, 22, 0, 0)  // ← was 12, pushed down to match rail
+            Padding = new Thickness(0, 22, 0, 0) 
         };
         stack.Children.Add(new Rectangle
         {
+            UseLayoutRounding = true,
             Width = 3,
             Height = 16,
             RadiusX = 2,
@@ -297,6 +287,7 @@ public class TimelineControl : Grid
         });
         stack.Children.Add(new Ellipse
         {
+            UseLayoutRounding = true,
             Width = 8,
             Height = 8,
             Fill = new SolidColorBrush(color),

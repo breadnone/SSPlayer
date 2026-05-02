@@ -3,10 +3,8 @@ using SSPlayer.Logs;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Devices.Printers;
 using Windows.Foundation;
 using Windows.Media;
 using Windows.Media.Audio;
@@ -29,7 +27,7 @@ public partial class AudioEngine
     private AudioFrameOutputNode _frameOutputNode;
     public AudioGraph GetAudioGraph() => _audioGraph;
     public MediaSourceAudioInputNode GetFileInputNode() => _fileInputNode;
-    private float[] _sharedBuffer = new float[1024]; // The bridge between threads
+    private float[] _sharedBuffer = new float[1024];
     private readonly object _lock = new object();
     private Thread _processingThread;
     private bool _isRunning = true;
@@ -46,7 +44,7 @@ public partial class AudioEngine
     }
     public void Dispose()
     {
-        _isRunning = false; // stops _processingThread if it's looping on this flag
+        _isRunning = false;
 
         if (_audioGraph != null)
         {
@@ -162,12 +160,10 @@ public partial class AudioEngine
         }
         catch (Exception ex)
         {
-            // Fallback for edge cases where the COM state might be unstable
             Log.Print($"Seek failed: {ex.Message}");
         }
     }
 
-    // Helper to update a single band live and update the settings object
     public void SetBandGain(int globalIdx, double gain, EqualizerSettings settings)
     {
         try
@@ -182,8 +178,6 @@ public partial class AudioEngine
             gain = Math.Clamp(gain, _minLinearGain, _maxLinearGain);
             _eqChain[chainIdx].Bands[bandIdx].Gain = gain;
 
-            // Convert linear back to dB before storing — BandGains stores dB values
-            // to match what the EQ slider reads back on next open
             if (settings != null && globalIdx < settings.BandGains.Count)
                 settings.BandGains[globalIdx] = 20.0 * Math.Log10(gain);
         }
@@ -293,8 +287,6 @@ public partial class AudioEngine
 
     private List<EqualizerEffectDefinition> _eqChain = new List<EqualizerEffectDefinition>();
     private List<AudioSubmixNode> _eqNodes = new List<AudioSubmixNode>();
-
-    // Inside AudioEngine.cs
     public void SetupEqualizer(EqualizerSettings savedSettings)
     {
         try
@@ -326,7 +318,6 @@ public partial class AudioEngine
                         eqEffect.Bands[b].FrequencyCenter = freqs[globalIdx];
                         eqEffect.Bands[b].Bandwidth = 0.8;
 
-                        // FIX: Use saved gain if it exists, otherwise default to 1.0
                         if (savedSettings != null && globalIdx < savedSettings.BandGains.Count)
                         {
                             double savedDb = savedSettings.BandGains[globalIdx];
@@ -368,13 +359,12 @@ public partial class AudioEngine
     {
         if (_eqChain == null || _eqChain.Count == 0 || bandIndex < 0) return;
 
-        // Guard: reject garbage values before they reach the COM EQ effect
         if (double.IsNaN(gainInDb) || double.IsInfinity(gainInDb))
             gainInDb = 0.0;
         gainInDb = Math.Clamp(gainInDb, -30.0, 30.0);
 
         int bandsPerEffect = (int)_eqChain[0].Bands.Count;
-        if (bandsPerEffect == 0) return; // Guard: avoid divide-by-zero
+        if (bandsPerEffect == 0) return; 
 
         int effectIdx = bandIndex / bandsPerEffect;
         int localIdx = bandIndex % bandsPerEffect;
@@ -397,8 +387,8 @@ public partial class AudioEngine
             try { band.Gain = 1.0; } catch { }
         }
     }
-    private double _minLinearGain = 0.13; // Default fallback
-    private double _maxLinearGain = 7.93; // Default fallback
+    private double _minLinearGain = 0.13; 
+    private double _maxLinearGain = 7.93;
     public double GetEqBandGain(int bandIndex)
     {
         if (_eqChain == null || _eqChain.Count == 0) return 0.0;
@@ -431,7 +421,7 @@ public partial class AudioEngine
             _fileInputNode.Seek(startTime);
             _audioGraph.Start();
 
-            var exportTimeout = DateTime.UtcNow.AddMinutes(30); // generous for large files
+            var exportTimeout = DateTime.UtcNow.AddMinutes(30);
             while (_fileInputNode.Position < endTime)
             {
                 if (DateTime.UtcNow > exportTimeout || _audioGraph == null) break;

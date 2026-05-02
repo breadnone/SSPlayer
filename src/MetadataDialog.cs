@@ -26,8 +26,8 @@ public static class MetadataEditor
 
     public static Flyout CreateFlyout(FrameworkElement anchor, StorageFile file, Action onSaved = null)
     {
-        var stack = new StackPanel { Spacing = 8, Width = 300, Padding = new Thickness(5) };
-        var currentCover = new Image { Width = 120, Height = 120, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 5) };
+        var stack = new StackPanel { UseLayoutRounding = true, Spacing = 8, Width = 300, Padding = new Thickness(5) };
+        var currentCover = new Image { UseLayoutRounding = true, Width = 120, Height = 120, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 5) };
 
         var coverScroller = new ScrollViewer
         {
@@ -43,16 +43,14 @@ public static class MetadataEditor
         var coverList = new StackPanel { UseLayoutRounding = true, Orientation = Orientation.Horizontal, Spacing = 8 };
         coverScroller.Content = coverList;
 
-        var autoFillBtn = new Button { Content = "Auto-Fill (Search Web)", HorizontalAlignment = HorizontalAlignment.Center, FontSize = 10 };
-        //var changeCoverBtn = new Button { Content = "Browse Local", HorizontalAlignment = HorizontalAlignment.Center, FontSize = 10 };
-
+        var autoFillBtn = new Button { UseLayoutRounding = true, Content = "Auto-Fill (Search Web)", HorizontalAlignment = HorizontalAlignment.Center, FontSize = 10 };
         byte[] dataToSave = null;
 
-        var titleInput = new TextBox { Header = "Title", FontSize = 12 };
-        var artistInput = new TextBox { Header = "Artist / Producer", FontSize = 12 };
-        var albumInput = new TextBox { Header = "Album", FontSize = 12 };
-        var yearInput = new TextBox { Header = "Year", FontSize = 12 };
-        var genreInput = new TextBox { Header = "Genre", FontSize = 12 };
+        var titleInput = new TextBox { UseLayoutRounding = true, Header = "Title", FontSize = 12 };
+        var artistInput = new TextBox { UseLayoutRounding = true, Header = "Artist / Producer", FontSize = 12 };
+        var albumInput = new TextBox { UseLayoutRounding = true, Header = "Album", FontSize = 12 };
+        var yearInput = new TextBox { UseLayoutRounding = true, Header = "Year", FontSize = 12 };
+        var genreInput = new TextBox { UseLayoutRounding = true, Header = "Genre", FontSize = 12 };
 
         var statusLabel = new TextBlock
         {
@@ -113,6 +111,7 @@ public static class MetadataEditor
                 using (var doc = JsonDocument.Parse(response))
                 {
                     var results = doc.RootElement.GetProperty("results");
+
                     foreach (var item in results.EnumerateArray())
                     {
                         string tUrl = item.GetProperty("artworkUrl100").GetString();
@@ -135,13 +134,14 @@ public static class MetadataEditor
 
                     foreach (var pkg in packages)
                     {
-                        var btn = new Button { Padding = new Thickness(2), Background = null };
-                        var img = new Image { Source = new BitmapImage(new Uri(pkg.ThumbUrl)), Width = 60, Height = 60, Stretch = Microsoft.UI.Xaml.Media.Stretch.UniformToFill };
+                        var btn = new Button { UseLayoutRounding = true, Padding = new Thickness(2), Background = null };
+                        var img = new Image { UseLayoutRounding = true, Source = new BitmapImage(new Uri(pkg.ThumbUrl)), Width = 60, Height = 60, Stretch = Microsoft.UI.Xaml.Media.Stretch.UniformToFill };
                         btn.Content = img;
 
                         btn.Click += async (sb, eb) =>
                         {
                             statusLabel.Text = "Applying selection...";
+
                             try
                             {
                                 if (!_coverCache.TryGetValue(pkg.HighResUrl, out byte[] imgBytes))
@@ -193,6 +193,7 @@ public static class MetadataEditor
             MainWindow.main.ToggleNonBlockingLoading(true);
             saveBtn.IsEnabled = false;
             statusLabel.Text = "Saving...";
+
             try
             {
                 var m = await file.Properties.GetMusicPropertiesAsync();
@@ -241,9 +242,8 @@ public static class MetadataEditor
 
         stack.Children.Add(currentCover);
         stack.Children.Add(coverScroller);
-        var btns = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Spacing = 10 };
+        var btns = new StackPanel { UseLayoutRounding = true, Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Spacing = 10 };
         btns.Children.Add(autoFillBtn);
-        //btns.Children.Add(changeCoverBtn);
         stack.Children.Add(btns);
         stack.Children.Add(titleInput);
         stack.Children.Add(artistInput);
