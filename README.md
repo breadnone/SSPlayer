@@ -49,12 +49,12 @@ Worlds most clean looking UI/UX multimedia player ever made..... ever
 *   WinUI & Win2D
 *   Just clone and hit build on Visual Studio it will just work (**fingerCross*). 
 *   vscode isn't supported due to WinUI.
-*   Sorry, no XAML
+*   Sorry, no XAML (UIUX is mostly vibe coded by Claude, im just not a uiux guy is all)
 
 ## TODO
 *   GStreamer version of this multimedia player is already in the work. Hopefully I'll have time to finish them (MFT is low latency but lack of codec support is all).
 
-Available on Microsoft Store (*FREE*) -> [SSPlayer](https://apps.microsoft.com/detail/9p5qldhq3ljg?hl=en-US&gl=US)  
+Download on Microsoft Store (*FREE*) -> [SSPlayer](https://apps.microsoft.com/detail/9p5qldhq3ljg?hl=en-US&gl=US)  
 ---
 
 ## 📦 Requirements
@@ -64,7 +64,8 @@ To enable hardware-accelerated decoding for modern formats, ensure you have the 
 *   OR it will be prompted on very 1st boot after fresh install. Feel free to opt-out if you want.
 *   Windows 11 is a MUST for the backdrop & WinRT apis to work (might work on 10 but completely untested).
 ---
-<img width="1919" height="1199" alt="image" src="https://github.com/user-attachments/assets/cd26a49b-1441-4584-93bf-5898a78ba649" />
+<img width="1919" height="1199" alt="image" src="https://github.com/user-attachments/assets/cd26a49b-1441-4584-93bf-5898a78ba649" />  
+
 <img width="1919" height="1199" alt="image" src="https://github.com/user-attachments/assets/070df220-f354-4e96-9aec-2c51ba33a3c6" />
 
 ## ⚖️ License
