@@ -6,18 +6,18 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078d7.svg)](https://www.microsoft.com/windows)
 [![Architecture](https://img.shields.io/badge/Arch-x64%20|%20ARM64-orange.svg)]()
 
-Fluent-designed multimedia player that prioritizes speed and simplicity without sacrificing power. Backed by WinUI.
+Worlds most clean looking multimedia player ever made..... ever
 
 ---
 
 ## ✨ Key Features
 
 ### Playback
-*   **Codec Support:** Native playback for **AV1** and **HEVC** (high-efficiency video coding). *Note: Extensions must be downloaded from the Microsoft Store.*
+*   **Codec Support:** Native playback for **AV1** and **HEVC**. *(Note: Codecs officially maintained by Microsoft and must be downloaded from the Microsoft Store.)*
 *   **Precision Control:** Fully adjustable playback speed and real-time **Zoom In/Out** functionality.
 *   **Subtitle Integration:** Automatically detects `.srt` files with matching names or allows for manual loading.
 *   **Mirror Mode:** Project a mirror window of your current media to an external display or secondary monitor instantly.
-*   
+
 ### Audio & Internet Radio
 *   **Backed by AudioGraph API:** Its a fine tuned api, what else can I say! 
 *   **10-Band Equalizer:** Fine-tune your listening experience with a professional-grade EQ.
