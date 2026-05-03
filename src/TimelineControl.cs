@@ -285,6 +285,7 @@ public class TimelineControl : Grid
             Fill = new SolidColorBrush(color),
             HorizontalAlignment = HorizontalAlignment.Center
         });
+
         stack.Children.Add(new Ellipse
         {
             UseLayoutRounding = true,

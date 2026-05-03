@@ -1,51 +1,31 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <linker>
 	<assembly fullname="SSPlayer">
-		<!-- Settings & JSON -->
 		<type fullname="SSPlayer.PlayerSettings" preserve="all" />
 		<type fullname="SSPlayer.EqualizerSettings" preserve="all" />
 		<type fullname="SSPlayer.PlaylistItem" preserve="all" />
 		<type fullname="AppJsonContext" preserve="all" />
-
-		<!-- Core Windows -->
 		<type fullname="SSPlayer.MainWindow" preserve="all" />
 		<type fullname="SSPlayer.App" preserve="all" />
-
-		<!-- Audio -->
 		<type fullname="SSPlayer.AudioEngine" preserve="all" />
-
-		<!-- Codec -->
 		<type fullname="SSPlayer.CodecCheckRecord" preserve="all" />
 		<type fullname="SSPlayer.CodecChecker" preserve="all" />
 		<type fullname="SSPlayer.CodecInfo" preserve="all" />
 		<type fullname="SSPlayer.CodecStatus" preserve="all" />
-
-		<!-- Wallpaper & Capture -->
 		<type fullname="SSPlayer.LiveWallpaper" preserve="all" />
 		<type fullname="SSPlayer.WindowCaptureManager" preserve="all" />
 		<type fullname="SSPlayer.CaptureViewWindow" preserve="all" />
-
-		<!-- UI Controls -->
 		<type fullname="SSPlayer.TimelineControl" preserve="all" />
 		<type fullname="SSPlayer.CanvasObject" preserve="all" />
 		<type fullname="SSPlayer.DraggableOverlay" preserve="all" />
-
-		<!-- Tiny Classes -->
 		<type fullname="SSPlayer.AtlasWrapper" preserve="all" />
 		<type fullname="SSPlayer.InternalPlayStatus" preserve="all" />
-
-		<!-- Metadata -->
 		<type fullname="SSPlayer.MetadataEditor" preserve="all" />
-
-		<!-- Extensions & Logs -->
 		<type fullname="SSPlayer.Logs.Log" preserve="all" />
 		<type fullname="SSPlayer.Logs.NativeLogOverlay" preserve="all" />
 		<type fullname="SSPlayer.Logs.ModalDialog" preserve="all" />
 		<type fullname="SSPlayer.Logs.Error" preserve="all" />
-
-		<!-- Win32 interop -->
 		<type fullname="SSPlayer.Win32" preserve="all" />
-		<!-- ShortcutManager — referenced in OnLoaded -->
 		<type fullname="SSPlayer.ShortcutManager" preserve="all" />
 		<type fullname="SSPlayer.IMemoryBufferByteAccess" preserve="all" />
 		<type fullname="SSPlayer.Program" preserve="all" />

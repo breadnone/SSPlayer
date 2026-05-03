@@ -39,6 +39,8 @@ public partial class AudioEngine
     private readonly double[] _eqFrequencies = { 31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 };
     public bool wasPaused { get; private set; }
     private MediaPlayer mediaPlayer;
+    public TimeSpan NaturalDuration => _fileInputNode?.Duration ?? TimeSpan.Zero;
+    public TimeSpan Position => _fileInputNode?.Position ?? TimeSpan.Zero;
     public AudioEngine()
     {
     }

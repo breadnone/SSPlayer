@@ -11,7 +11,6 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using SSPlayer.Logs;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -85,6 +84,66 @@ public sealed partial class MainWindow
             Log.Print($"LoadSettings failed: {ex.Message}");
             _currentSettings = new PlayerSettings();
             SaveSettings();
+        }
+    }
+    CancellationTokenSource openWithTokenSource;
+    /// <summary>Called by App when launched via "Open With".</summary>
+    public async Task OpenWithFilesAsync(IReadOnlyList<IStorageItem> items)
+    {
+        try
+        {
+            openWithTokenSource?.Cancel();
+            openWithTokenSource = CancellationTokenSource.CreateLinkedTokenSource(MainTokenSource.Token);
+            var ct = openWithTokenSource;
+
+            // Collect valid files first
+            var validFiles = new List<StorageFile>();
+
+            foreach (var item in items)
+            {
+                if (item is StorageFile file && _supportedExtensions.Contains(file.FileType.ToLower()))
+                {
+                    bool isValid = await CodecChecker.IsFileSupported(file, ct);
+                    if (ct.IsCancellationRequested) return;
+                    if (!isValid) continue;
+                    validFiles.Add(file);
+                }
+            }
+
+            if (validFiles.Count == 0) return;
+
+            // Clear and replace playlist — do NOT append
+            _playlistCollection.Clear();
+            _currentPlaylistIndex = -1;
+
+            StorageFile firstFile = null;
+
+            foreach (var file in validFiles)
+            {
+                await AddToPlaylist(file);
+                if (ct.IsCancellationRequested) return;
+                firstFile ??= file;
+            }
+
+            bool wasplayed = false;
+
+            if (firstFile != null)
+            {
+                wasplayed = true;
+                await PlayItemByPath(firstFile.Path, InternalPlayStatus.ForcePlay);
+            }
+
+            if (ct.IsCancellationRequested && wasplayed)
+            {
+                PauseMedia(PlayerPlayState.Stop);
+            }
+        }
+        catch (Exception ex)
+        {
+            if (ex is IndexOutOfRangeException || ex is FileNotFoundException) return;
+            if (ex is OperationCanceledException || ex is TaskCanceledException || ex is ObjectDisposedException) { }
+            else
+                throw ex;
         }
     }
     int screenStateIsUpdating;
@@ -1212,25 +1271,24 @@ public sealed partial class MainWindow
         rootElement.PointerMoved += _borderlessMovedHandler;
         rootElement.PointerReleased += _borderlessReleasedHandler;
     }
-
+    CancellationTokenSource singleFileTokenSource;
     private async void OnOpenSingleFile(object sender, RoutedEventArgs e)
     {
         try
         {
+            singleFileTokenSource?.Cancel();
+            singleFileTokenSource = CancellationTokenSource.CreateLinkedTokenSource(MainTokenSource.Token);
+            var cts = singleFileTokenSource;
+
             var p = new FileOpenPicker();
             InitializeWithWindow.Initialize(p, _hwnd);
             foreach (var ex in _supportedExtensions) p.FileTypeFilter.Add(ex);
             var f = await p.PickSingleFileAsync();
-            if (MainTokenSource.IsCancellationRequested) return;
+            if (cts.IsCancellationRequested) return;
 
-            var au = await f.Properties.GetMusicPropertiesAsync();
-            if (MainTokenSource.IsCancelled()) return;
-            var vid = await f.Properties.GetVideoPropertiesAsync();
-            if (MainTokenSource.IsCancelled()) return;
-            var img = await f.Properties.GetImagePropertiesAsync();
-            if (MainTokenSource.IsCancelled()) return;
+            bool isValid = await CodecChecker.IsFileSupported(f, cts);
 
-            if (au == null && vid == null && img == null)
+            if (cts.IsCancellationRequested || !isValid)
             {
                 return;
             }
@@ -1396,7 +1454,10 @@ public sealed partial class MainWindow
 
                 var audioTask = audioEngine.SetupAudioEngine(f, _player, _volumeSlider.Value, _currentSettings.Equalizer);
 
-                PauseMedia(PlayerPlayState.Paused);
+                if (PlayState == PlayerPlayState.Playing)
+                {
+                    PauseMedia(PlayerPlayState.Paused);
+                }
 
                 var audioIsReady = await audioTask;
                 if (!audioIsReady) return;
@@ -1463,8 +1524,8 @@ public sealed partial class MainWindow
             {
                 PlayState = PlayerPlayState.Playing;
                 timelineController.Resume();
-                audioEngine.Start();
                 audioEngine.Seek(timelineController.Position);
+                audioEngine.Start();
                 return;
             }
 
@@ -1505,7 +1566,8 @@ public sealed partial class MainWindow
                 return;
             }
 
-            if (PlayState == PlayerPlayState.Paused || PlayState == PlayerPlayState.Stop) return;
+            if (state == PlayState) return;  // only skip if target == current
+            if (PlayState == PlayerPlayState.Stop) return;  // can't pause/stop when already stopped
 
             PlayState = state;
             audioEngine.ToggleMute(true);
@@ -1726,14 +1788,20 @@ public sealed partial class MainWindow
         var profile = MediaEncodingProfile.CreateMp4(quality);
         await composition.RenderToFileAsync(outputFile, MediaTrimmingPreference.Precise, profile);
     }
+    CancellationTokenSource bypathSource;
     private async Task PlayItemByPath(string path, InternalPlayStatus forceState, bool isCd = false)
     {
         try
         {
+            bypathSource?.Cancel();
+            bypathSource = CancellationTokenSource.CreateLinkedTokenSource(MainTokenSource.Token);
+            var ct = bypathSource;
+
             if (path.StartsWith("radio://", StringComparison.OrdinalIgnoreCase))
             {
                 if (PlayState == PlayerPlayState.Playing || PlayState == PlayerPlayState.Paused)
                     PauseMedia(PlayerPlayState.Stop);
+
                 _player.MediaPlayer.Source = null;
 
                 bool played = await TryPlayRadioByPath(path);
@@ -1792,9 +1860,22 @@ public sealed partial class MainWindow
                 return;
             }
 
-            if (file == null || MainTokenSource.IsCancellationRequested) return;
+            if (file == null || ct.IsCancellationRequested) return;
+
+            if (!isCd)
+            {
+                bool valid = await CodecChecker.IsFileSupported(file, bypathSource);
+
+                if (bypathSource.IsCancellationRequested) return;
+
+                if (!valid)
+                {
+                    return;
+                }
+            }
 
             await LoadMultimediaFile(file, trackIndex: false);
+
             if (MainTokenSource.IsCancellationRequested) return;
 
             RefreshPlaylistUI();

@@ -453,21 +453,6 @@ public sealed partial class MainWindow : Window
         SetupNowPlayingScroller();
         playerClipper.CornerRadius = GetSystemCornerRadius();
     }
-    /// <summary>Called by App when launched via "Open With".</summary>
-    public async Task OpenWithFilesAsync(IReadOnlyList<Windows.Storage.IStorageItem> items)
-    {
-        StorageFile firstFile = null;
-        foreach (var item in items)
-        {
-            if (item is StorageFile file && _supportedExtensions.Contains(file.FileType.ToLower()))
-            {
-                await AddToPlaylist(file);
-                firstFile ??= file;
-            }
-        }
-        if (firstFile != null)
-            await PlayItemByPath(firstFile.Path, InternalPlayStatus.ForcePlay);
-    }
     private void OnAppwindowChanged(object sender, AppWindowChangedEventArgs e)
     {
         try
@@ -537,18 +522,6 @@ public sealed partial class MainWindow : Window
 
             InitializeVolumeOverlay(playerContainer);
             InitializeLoadingOverlay(playerContainer);
-
-            playerContainer.PointerWheelChanged += (s, e) =>
-            {
-                var properties = e.GetCurrentPoint(playerContainer).Properties;
-                int delta = properties.MouseWheelDelta;
-                double step = 5;
-                double newVolume = _currentSettings.Volume + (delta > 0 ? step : -step);
-
-                newVolume = Math.Clamp(newVolume, 0, 100);
-                UpdateVolume(newVolume);
-                e.Handled = true;
-            };
 
             playerContainer.PointerWheelChanged += (s, e) =>
             {
@@ -2033,20 +2006,32 @@ public sealed partial class MainWindow : Window
         if (_player?.MediaPlayer == null) return;
 
         var session = _player.MediaPlayer.PlaybackSession;
+        TimeSpan duration = TimeSpan.Zero;
+        TimeSpan position = TimeSpan.Zero;
 
-        if (session?.NaturalDuration.TotalSeconds > 0)
+        if (fileType == FileType.Audio && audioEngine != null)
         {
-            // Suppress timer updates until pipeline catches up to last seeked position
+            duration = audioEngine.NaturalDuration;
+            position = audioEngine.Position;
+        }
+        else if (fileType == FileType.Video && session != null)
+        {
+            duration = session.NaturalDuration;
+            position = session.Position;
+        }
+
+        if (duration.TotalSeconds > 0)
+        {
             if (_lastSeekedPosition != TimeSpan.MinValue)
             {
-                double drift = Math.Abs((session.Position - _lastSeekedPosition).TotalSeconds);
+                double drift = Math.Abs((position - _lastSeekedPosition).TotalSeconds);
                 if (drift > 0.5) return;
                 else _lastSeekedPosition = TimeSpan.MinValue;
             }
 
-            _progressSlider.Value = (session.Position.TotalSeconds / session.NaturalDuration.TotalSeconds) * 100;
-            _elapsedText.Text = session.Position.ToString(@"hh\:mm\:ss").TrimStart('0').TrimStart(':');
-            _durationText.Text = session.NaturalDuration.ToString(@"hh\:mm\:ss").TrimStart('0').TrimStart(':');
+            _progressSlider.Value = (position.TotalSeconds / duration.TotalSeconds) * 100;
+            _elapsedText.Text = position.ToString(@"hh\:mm\:ss").TrimStart('0').TrimStart(':');
+            _durationText.Text = duration.ToString(@"hh\:mm\:ss").TrimStart('0').TrimStart(':');
         }
 
         RefreshActiveItemElapsed();
@@ -2417,7 +2402,13 @@ public sealed partial class MainWindow : Window
         {
             try
             {
-                if (_currentSettings.RepeatForever) { SeekUnified(TimeSpan.Zero); PlayMedia(); return; }
+                if (_currentSettings.RepeatForever)
+                {
+                    PauseMedia(PlayerPlayState.Stop);
+                    PlayMedia();
+                    return;
+                }
+
                 if (_playlistCollection.Count == 0) return;
 
                 int next = _currentPlaylistIndex + 1;
@@ -3927,6 +3918,7 @@ public sealed partial class MainWindow : Window
         thread = new Thread(async () =>
         {
             var stamp = Stopwatch.GetTimestamp();
+
             while (!MainTokenSource.IsCancellationRequested)
             {
                 await Task.Delay(TimeSpan.FromMilliseconds(166.67));

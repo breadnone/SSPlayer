@@ -3,6 +3,7 @@ using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.Win32;
 using SSPlayer.Logs;
 using System;
 using System.Collections.Generic;
@@ -11,11 +12,15 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Printers;
 using Windows.Graphics.Imaging;
 using Windows.Media.Core;
+using Windows.Media.Editing;
 using Windows.Media.MediaProperties;
+using Windows.Media.Playback;
+using Windows.Storage;
 using Windows.System;
 using Windows.UI;
 
@@ -44,6 +49,17 @@ internal sealed class CodecCheckRecord
 
 public static class CodecChecker
 {
+    public static async Task<bool> IsFileSupported(StorageFile f, CancellationTokenSource token)
+    {
+        var au = await f.Properties.GetMusicPropertiesAsync();
+        if (au != null) return true;
+        if (token.IsCancelled()) return false;
+        var vid = await f.Properties.GetVideoPropertiesAsync();
+        if (token.IsCancelled()) return false;
+        if (vid != null) return true;
+
+        return false;
+    }
     public const int RecheckIntervalDays = 15;
 
 #if DEBUG
@@ -198,7 +214,15 @@ public static class CodecChecker
 
         return await Task.WhenAll(tasks);
     }
+    public static bool IsMultimediFileSupported(string filePath)
+    {
+        var ext = Path.GetExtension(filePath).ToLowerInvariant();
+        
+        if (string.IsNullOrEmpty(ext)) return false;
 
+        using var key = Registry.LocalMachine.OpenSubKey($@"SOFTWARE\Microsoft\Windows Media Foundation\ByteStreamHandlers\{ext}");
+        return key != null;
+    }
     private static async Task<CodecStatus> ProbeVideoAsync(string subtype)
     {
         //if (subtype == "av01") return CodecStatus.Supported;
@@ -372,10 +396,6 @@ public sealed partial class MainWindow
         catch (Exception ex) { Log.Print($"SaveCodecCheckRecord: {ex.Message}"); }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Dialog  — no cancel / opt-out button, just "Done"
-    // ─────────────────────────────────────────────────────────────────────────
-
     private async Task ShowCodecDialogAsync(
         IReadOnlyList<CodecInfo> all,
         IReadOnlyList<CodecInfo> missing)
@@ -511,7 +531,6 @@ public sealed partial class MainWindow
         }
         catch (Exception ex) { Log.Print($"ShowCodecDialogAsync: {ex.Message}"); }
     }
-
     // ─────────────────────────────────────────────────────────────────────────
     //  Card — entire surface clickable via Windows.System.Launcher
     // ─────────────────────────────────────────────────────────────────────────
